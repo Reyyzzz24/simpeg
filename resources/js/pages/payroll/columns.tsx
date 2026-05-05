@@ -1,0 +1,126 @@
+import { ColumnDef, Row } from '@tanstack/react-table'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+export const baseColumns: ColumnDef<any>[] = [
+    {
+        header: 'Nama',
+        cell: ({ row }) => row.original.user?.name ?? '-',
+    },
+    {
+        accessorKey: 'periode',
+        header: 'Periode',
+    },
+    {
+        header: 'Adjustment',
+        cell: ({ row }) => {
+            const adjustments = row.original.adjustments ?? []
+            const totalAdj = Number(row.original.total_adjustment ?? 0)
+
+            if (!adjustments.length) {
+                return <span className="text-muted-foreground text-xs">Tidak ada</span>
+            }
+
+            return (
+                <div className="flex flex-col gap-1">
+                    <span className={`font-bold ${totalAdj < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {totalAdj > 0 ? '+' : ''} Rp {totalAdj.toLocaleString('id-ID')}
+                    </span>
+
+                    <div className="flex flex-wrap gap-1">
+                        {adjustments.map((adj: any) => (
+                            <TooltipProvider key={adj.id}>
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <Badge variant="outline" className="text-[10px] px-1 py-0 cursor-pointer">
+                                            {adj.component?.name ?? 'Adj'}
+                                        </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>{adj.note ?? '-'}</p>
+                                        <p className="font-bold">
+                                            Rp {Number(adj.amount).toLocaleString('id-ID')}
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        ))}
+                    </div>
+                </div>
+            )
+        },
+    },
+    {
+        accessorKey: 'total_gaji',
+        header: 'Total Gaji',
+        cell: ({ row }) => (
+            <span>
+                Rp {Number(row.original.total_gaji ?? 0).toLocaleString('id-ID')}
+            </span>
+        ),
+    },
+]
+
+export function getPayrollColumns(opts?: {
+    onDetail?: (r: any) => void
+    onEditAdjustment?: (adjustments: any[]) => void
+    onDeleteAdjustment?: (adjustments: any[]) => void
+}) {
+    return [
+        ...baseColumns,
+        {
+            id: 'actions',
+            header: 'Aksi',
+            cell: ({ row }: { row: Row<any> }) => {
+                const record = row.original
+                const adjustments = record.adjustments ?? []
+
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end" className="w-52">
+                            <DropdownMenuItem onClick={() => opts?.onDetail?.(record)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Detail
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+
+                            {adjustments.length > 0 ? (
+                                <>
+                                    <DropdownMenuItem onClick={() => opts?.onEditAdjustment?.(adjustments)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Edit Adjustment
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem onClick={() => opts?.onDeleteAdjustment?.(adjustments)}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Hapus Adjustment
+                                    </DropdownMenuItem>
+                                </>
+                            ) : (
+                                <DropdownMenuItem disabled>
+                                    Tidak ada adjustment
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )
+            },
+        },
+    ]
+}

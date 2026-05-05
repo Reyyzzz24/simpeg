@@ -1,0 +1,102 @@
+// resources/js/pages/users/index.tsx
+
+import { Head } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import { PageHeader } from '@/components/page-header';
+import { DataTable } from '@/components/ui/data-table';
+import { getColumns } from './columns';
+import { DashboardCard } from '@/components/dashboard-card';
+import { CardContent } from '@/components/ui/card';
+import { Users, Plus, UserCog } from 'lucide-react';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import CreateUserForm from './partials/create-user-form';
+import EditUserModal from './partials/edit-user-modal';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+
+const breadcrumbs = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Users', href: '/users' },
+];
+
+export default function UsersIndex({ users, stats }: any) {
+    const [createOpen, setCreateOpen] = useState(false);
+    const [editRecord, setEditRecord] = useState<any | null>(null);
+
+    return (
+        <>
+            <Head title="Users" />
+
+            <div className="flex flex-col gap-8 p-4 md:p-8">
+                <PageHeader
+                    title="Manajemen Pengguna"
+                    subtitle="Sistem Informasi Kepegawaian SMKKPDM"
+                    description="Kelola data pengguna, hak akses, dan informasi akun dalam sistem."
+                    gradient="bg-linear-to-r from-emerald-600 to-emerald-500"
+                    icon={<UserCog className="size-20 text-white" />} // Ganti emoji dengan komponen Icon
+                    shadowColor="shadow-emerald-200/50"
+                />
+
+                <div className="grid gap-6 md:grid-cols-3">
+                    <DashboardCard>
+                        <CardContent className="p-6 flex items-center gap-4">
+                            <div className="p-3 bg-green-100 text-green-600 rounded-lg"><Users /></div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Total Users</p>
+                                <h3 className="text-2xl font-bold">{stats.total}</h3>
+                            </div>
+                        </CardContent>
+                    </DashboardCard>
+                </div>
+
+                <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <h2 className="text-lg font-semibold mb-4">Data Users</h2>
+
+                    <DataTable
+                        columns={getColumns({
+                            onEdit: (r: any) => setEditRecord(r),
+                            onDelete: (r: any) => {
+                                if (!confirm('Hapus user ini?')) return;
+                                fetch(`/users/${r.id}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'X-CSRF-TOKEN':
+                                            (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+                                    }
+                                })
+                                    .then(() => location.reload())
+                                    .catch(() => alert('Gagal menghapus'));
+                            }
+                        })}
+                        data={users}
+                        actions={
+                            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="success">
+                                        <Plus className="size-4" />
+                                        Tambah User
+                                    </Button>
+                                </DialogTrigger>
+
+                                <DialogContent className="sm:max-w-lg">
+                                    <DialogHeader>
+                                        <DialogTitle>Tambah User</DialogTitle>
+                                        <DialogDescription>Buat user baru</DialogDescription>
+                                    </DialogHeader>
+
+                                    <CreateUserForm onClose={() => setCreateOpen(false)} />
+                                </DialogContent>
+                            </Dialog>
+                        }
+                    />
+
+                    <EditUserModal isOpen={!!editRecord} onClose={() => setEditRecord(null)} record={editRecord} />
+                </div>
+            </div>
+        </>
+    );
+}
+
+UsersIndex.layout = (page: React.ReactNode) => (
+    <AppLayout breadcrumbs={breadcrumbs}>{page}</AppLayout>
+);

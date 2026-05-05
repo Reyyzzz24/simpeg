@@ -1,0 +1,171 @@
+import { DashboardCard } from '@/components/dashboard-card';
+import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
+import { CardContent } from '@/components/ui/card';
+import { DataTable } from '@/components/ui/data-table';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import AppLayout from '@/layouts/app-layout';
+import { Head, router } from '@inertiajs/react';
+import { CheckCircle2, Clock, Timer } from 'lucide-react';
+import { useState } from 'react';
+import { getOvertimeReportColumns } from './columns';
+
+const breadcrumbs = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Laporan Lembur', href: '/report/overtime' },
+];
+
+export default function OvertimeReportIndex({ data, stats, filters }: any) {
+    const [start, setStart] = useState(filters?.start_date ?? '');
+    const [end, setEnd] = useState(filters?.end_date ?? '');
+    const [status, setStatus] = useState(filters?.status ?? 'all');
+
+    const handleFilter = () => {
+        router.get('/report/overtime', {
+            start_date: start,
+            end_date: end,
+            status,
+        });
+    };
+
+    return (
+        <>
+            <Head title="Laporan Lembur" />
+
+            <div className="flex flex-col gap-8 p-4 md:p-8">
+                <PageHeader
+                    title="Laporan Lembur"
+                    subtitle="Sistem Informasi Kepegawaian"
+                    description="Rekap lembur pegawai berdasarkan periode dan status persetujuan."
+                    gradient="bg-linear-to-r from-cyan-600 to-blue-500"
+                    icon={<Timer className="size-20 text-white" />}
+                />
+
+                <div className="grid gap-6 md:grid-cols-4">
+                    <DashboardCard>
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-lg bg-blue-100 p-3 text-blue-600">
+                                <Timer />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">
+                                    Total Lembur
+                                </p>
+                                <h3 className="text-2xl font-bold">
+                                    {stats?.total ?? 0}
+                                </h3>
+                            </div>
+                        </CardContent>
+                    </DashboardCard>
+
+                    <DashboardCard>
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-lg bg-green-100 p-3 text-green-600">
+                                <CheckCircle2 />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">
+                                    Disetujui
+                                </p>
+                                <h3 className="text-2xl font-bold">
+                                    {stats?.approved ?? 0}
+                                </h3>
+                            </div>
+                        </CardContent>
+                    </DashboardCard>
+
+                    <DashboardCard>
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-lg bg-yellow-100 p-3 text-yellow-600">
+                                <Clock />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">
+                                    Menunggu
+                                </p>
+                                <h3 className="text-2xl font-bold">
+                                    {stats?.pending ?? 0}
+                                </h3>
+                            </div>
+                        </CardContent>
+                    </DashboardCard>
+
+                    <DashboardCard>
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-lg bg-purple-100 p-3 text-purple-600">
+                                <Clock />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">
+                                    Total Jam
+                                </p>
+                                <h3 className="text-2xl font-bold">
+                                    {Number(stats?.total_hours ?? 0).toFixed(2)}
+                                </h3>
+                            </div>
+                        </CardContent>
+                    </DashboardCard>
+                </div>
+
+                <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <h2 className="mb-4 text-lg font-semibold">
+                        Detail Laporan Lembur
+                    </h2>
+
+                    <DataTable
+                        data={data ?? []}
+                        columns={getOvertimeReportColumns()}
+                        actions={
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Input
+                                    type="date"
+                                    value={start}
+                                    onChange={(event) =>
+                                        setStart(event.target.value)
+                                    }
+                                    className="w-40"
+                                />
+                                <Input
+                                    type="date"
+                                    value={end}
+                                    onChange={(event) =>
+                                        setEnd(event.target.value)
+                                    }
+                                    className="w-40"
+                                />
+                                <Select value={status} onValueChange={setStatus}>
+                                    <SelectTrigger className="w-40">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua</SelectItem>
+                                        <SelectItem value="approved">
+                                            Disetujui
+                                        </SelectItem>
+                                        <SelectItem value="pending">
+                                            Menunggu
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Button variant="outline" onClick={handleFilter}>
+                                    Filter
+                                </Button>
+                            </div>
+                        }
+                    />
+                </div>
+            </div>
+        </>
+    );
+}
+
+OvertimeReportIndex.layout = (page: React.ReactNode) => (
+    <AppLayout breadcrumbs={breadcrumbs}>{page}</AppLayout>
+);
