@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Illuminate\Validation\Rule;
 
 class EmployeeController extends Controller
 {
@@ -43,7 +44,7 @@ class EmployeeController extends Controller
             'nama' => 'required|string|max:255',
             'nip' => 'nullable|string|unique:pegawai,nip,' . $employee->id,
             'sub_role' => 'required|string',
-            'status_kerja' => 'required|string',
+            'status_kerja' => ['required', Rule::in(Pegawai::STATUS_KERJA_OPTIONS)],
             'position_id' => 'nullable|exists:positions,id', // Validasi position_id
             'gaji_pokok' => 'nullable|numeric',
             'transport_harian' => 'nullable|numeric',

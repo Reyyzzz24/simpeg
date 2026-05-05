@@ -8,6 +8,7 @@ class Guru extends Model
 {
     protected $table = 'guru';
     protected $guarded = [];
+    public const STATUS_KERJA_OPTIONS = ['tetap', 'ptt'];
 
     public function user()
     {

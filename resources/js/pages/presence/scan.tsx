@@ -1,3 +1,5 @@
+import { Head } from '@inertiajs/react';
+import { CheckCircle2, Clock, LogIn, UserX, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -6,14 +8,13 @@ import {
     CardHeader,
 } from '@/components/ui/card';
 import { SmartLink } from '@/components/ui/smart-link';
-import { Head } from '@inertiajs/react';
-import { CheckCircle2, Clock, LogIn, UserX, XCircle } from 'lucide-react';
 
 interface ScanResultProps {
     status:
         | 'success'
         | 'expired'
         | 'invalid'
+        | 'info'
         | 'login_required'
         | 'unauthorized' // Mengganti not_member ke istilah kepegawaian
         | 'already_marked';
@@ -32,7 +33,10 @@ export default function Scan({
     location,
     timestamp,
 }: ScanResultProps) {
-    const isSuccess = status === 'success' || status === 'already_marked';
+    const isSuccess =
+        status === 'success' ||
+        status === 'already_marked' ||
+        status === 'info';
     const isLoginRequired = status === 'login_required';
     const isExpired = status === 'expired';
     const isUnauthorized = status === 'unauthorized';
@@ -45,6 +49,7 @@ export default function Scan({
                 </div>
             );
         }
+
         if (isLoginRequired) {
             return (
                 <div className="rounded-full bg-blue-100 p-4 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
@@ -52,6 +57,7 @@ export default function Scan({
                 </div>
             );
         }
+
         if (isExpired) {
             return (
                 <div className="rounded-full bg-orange-100 p-4 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
@@ -59,6 +65,7 @@ export default function Scan({
                 </div>
             );
         }
+
         if (isUnauthorized) {
             return (
                 <div className="rounded-full bg-yellow-100 p-4 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400">
@@ -66,6 +73,7 @@ export default function Scan({
                 </div>
             );
         }
+
         return (
             <div className="rounded-full bg-red-100 p-4 text-red-600 dark:bg-red-900/30 dark:text-red-400">
                 <XCircle className="h-16 w-16" />
@@ -107,20 +115,32 @@ export default function Scan({
                             <div className="grid grid-cols-[110px_1fr] gap-2">
                                 {type && (
                                     <>
-                                        <span className="text-muted-foreground text-xs uppercase tracking-wider">Tipe:</span>
-                                        <span className="font-semibold capitalize">{type}</span>
+                                        <span className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Tipe:
+                                        </span>
+                                        <span className="font-semibold capitalize">
+                                            {type}
+                                        </span>
                                     </>
                                 )}
                                 {location && (
                                     <>
-                                        <span className="text-muted-foreground text-xs uppercase tracking-wider">Lokasi:</span>
-                                        <span className="font-semibold">{location}</span>
+                                        <span className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Lokasi:
+                                        </span>
+                                        <span className="font-semibold">
+                                            {location}
+                                        </span>
                                     </>
                                 )}
                                 {timestamp && (
                                     <>
-                                        <span className="text-muted-foreground text-xs uppercase tracking-wider">Waktu:</span>
-                                        <span className="font-semibold">{timestamp}</span>
+                                        <span className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Waktu:
+                                        </span>
+                                        <span className="font-semibold">
+                                            {timestamp}
+                                        </span>
                                     </>
                                 )}
                             </div>
@@ -130,13 +150,15 @@ export default function Scan({
                 <CardFooter className="flex flex-col gap-2">
                     {isSuccess ? (
                         <Button className="w-full" size="lg" asChild>
-                            <SmartLink href="/presence/history">
+                            <SmartLink href="/presence/self/history">
                                 Lihat Riwayat Kerja
                             </SmartLink>
                         </Button>
                     ) : isLoginRequired && token ? (
                         <Button className="w-full" size="lg" asChild>
-                            <SmartLink href={`/login?redirect=${encodeURIComponent(`/presence/mark/${token}`)}`}>
+                            <SmartLink
+                                href={`/login?redirect=${encodeURIComponent(`/presence/mark/${token}`)}`}
+                            >
                                 <LogIn className="mr-2 h-4 w-4" />
                                 Login Ulang
                             </SmartLink>

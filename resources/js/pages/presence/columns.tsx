@@ -1,28 +1,23 @@
 // resources/js/pages/presence/columns.tsx
 
-import { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@/components/ui/badge';
-import { getEmployeeStatus } from './status';
+import type { ColumnDef } from '@tanstack/react-table';
+import { MoreHorizontal, Edit, Eye, History } from 'lucide-react';
 import * as React from 'react';
-import {
-    MoreHorizontal,
-    Edit,
-    Eye,
-    History
-} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export const columns: ColumnDef<any>[] = [
     {
-        accessorKey: 'employee.name',
+        id: 'employee_name',
+        accessorFn: (row) => row.employee?.name ?? '',
         header: 'Nama Pegawai',
     },
     {
@@ -49,12 +44,59 @@ export const columns: ColumnDef<any>[] = [
             };
 
             return (
-                <Badge className={`capitalize ${colorMap[status] ?? 'bg-gray-100 text-gray-700'}`}>
+                <Badge
+                    className={`capitalize ${colorMap[status] ?? 'bg-gray-100 text-gray-700'}`}
+                >
                     {status}
                 </Badge>
             );
-        }
-    }
+        },
+    },
+    {
+        accessorKey: 'total_jam_ajar',
+        header: 'Jam Ajar',
+        cell: ({ row }) => {
+            const total = row.original.total_jam_ajar ?? 0;
+            const jenis = row.original.jenis_ajar;
+
+            if (!total || !jenis || jenis === 'none') {
+                return '-';
+            }
+
+            return `${total} jam ${jenis}`;
+        },
+    },
+    {
+        accessorKey: 'status_validasi_ajar',
+        header: 'Validasi Ajar',
+        cell: ({ row }) => {
+            const status = row.original.status_validasi_ajar;
+
+            if (!status) {
+                return '-';
+            }
+
+            const labelMap: Record<string, string> = {
+                sesuai: 'Sesuai',
+                melebihi_durasi: 'Melebihi Durasi',
+                belum_lengkap: 'Belum Lengkap',
+            };
+
+            const colorMap: Record<string, string> = {
+                sesuai: 'bg-green-100 text-green-700',
+                melebihi_durasi: 'bg-red-100 text-red-700',
+                belum_lengkap: 'bg-orange-100 text-orange-700',
+            };
+
+            return (
+                <Badge
+                    className={colorMap[status] ?? 'bg-gray-100 text-gray-700'}
+                >
+                    {labelMap[status] ?? status}
+                </Badge>
+            );
+        },
+    },
 ];
 
 export function getColumns(opts?: {
@@ -62,7 +104,7 @@ export function getColumns(opts?: {
     onDetail?: (r: any) => void;
     onHistory?: (r: any) => void;
     onView?: (r: any) => void;
-    timeStatus?: any
+    timeStatus?: any;
 }) {
     const actionCol: ColumnDef<any> = {
         id: 'actions',
@@ -82,17 +124,26 @@ export function getColumns(opts?: {
                         <DropdownMenuLabel>Aksi</DropdownMenuLabel>
                         <DropdownMenuSeparator />
 
-                        <DropdownMenuItem onClick={() => opts?.onDetail?.(record) ?? opts?.onView?.(record)}>
+                        <DropdownMenuItem
+                            onClick={() =>
+                                opts?.onDetail?.(record) ??
+                                opts?.onView?.(record)
+                            }
+                        >
                             <Eye className="mr-2 h-4 w-4" />
                             Detail
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem onClick={() => opts?.onEdit?.(record)}>
+                        <DropdownMenuItem
+                            onClick={() => opts?.onEdit?.(record)}
+                        >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem onClick={() => opts?.onHistory?.(record)}>
+                        <DropdownMenuItem
+                            onClick={() => opts?.onHistory?.(record)}
+                        >
                             <History className="mr-2 h-4 w-4" />
                             Riwayat
                         </DropdownMenuItem>

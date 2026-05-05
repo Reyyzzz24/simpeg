@@ -17,7 +17,10 @@ class Absensi extends Model
         'jam_pulang', 
         'status_disiplin', 
         'total_jam_ajar', 
-        'jenis_ajar'
+        'jenis_ajar',
+        'durasi_hadir_menit',
+        'selisih_jam_ajar_menit',
+        'status_validasi_ajar',
     ];
 
     /**

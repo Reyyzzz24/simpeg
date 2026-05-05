@@ -6,6 +6,7 @@ use App\Models\Guru;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Position;
+use Illuminate\Validation\Rule;
 
 class TeacherController extends Controller
 {
@@ -21,6 +22,7 @@ class TeacherController extends Controller
                     'nama' => $item->nama,
                     'nuptk' => $item->nuptk,
                     'sub_role' => $item->sub_role,
+                    'status_kerja' => $item->status_kerja ?? 'tetap',
                     'position_id' => $item->position_id,
                     'jabatan' => $item->position->name ?? '-',
 
@@ -49,6 +51,7 @@ class TeacherController extends Controller
             'nuptk' => 'nullable|string|unique:guru,nuptk',
             'position_id' => 'nullable|exists:positions,id',
             'sub_role' => 'nullable|string',
+            'status_kerja' => ['required', Rule::in(Guru::STATUS_KERJA_OPTIONS)],
 
             'tarif_per_30_menit' => 'nullable|numeric',
             'transport_harian' => 'nullable|numeric',
@@ -62,6 +65,7 @@ class TeacherController extends Controller
             'nuptk' => $validated['nuptk'] ?? null,
             'position_id' => $validated['position_id'] ?? null,
             'sub_role' => $validated['sub_role'] ?? null,
+            'status_kerja' => $validated['status_kerja'],
 
             'tarif_per_30_menit' => $validated['tarif_per_30_menit'] ?? null,
             'transport_harian' => $validated['transport_harian'] ?? null,
@@ -78,6 +82,7 @@ class TeacherController extends Controller
             'nama' => 'required|string|max:255',
             'nuptk' => 'nullable|string|unique:guru,nuptk,' . $guru->id,
             'sub_role' => 'nullable|string',
+            'status_kerja' => ['required', Rule::in(Guru::STATUS_KERJA_OPTIONS)],
             'position_id' => 'nullable|exists:positions,id',
 
             'tarif_per_30_menit' => 'nullable|numeric',
@@ -90,6 +95,7 @@ class TeacherController extends Controller
             'nama' => $validated['nama'],
             'nuptk' => $validated['nuptk'] ?? null,
             'sub_role' => $validated['sub_role'] ?? null,
+            'status_kerja' => $validated['status_kerja'],
             'position_id' => $validated['position_id'] ?? null,
 
             'tarif_per_30_menit' => $validated['tarif_per_30_menit'] ?? null,

@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     LayoutGrid,
     Clock,
@@ -15,11 +15,20 @@ import {
     GitBranch,
     Timer,
     Megaphone,
+    BookOpenCheck,
+    History,
+    CalendarCheck, // Icon tambahan untuk label utama dropdown
 } from 'lucide-react';
 
+import { route } from 'ziggy-js';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
     Sidebar,
     SidebarContent,
@@ -33,33 +42,18 @@ import {
     SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
-import { route } from 'ziggy-js';
+import type { NavItem, SharedData } from '@/types';
 
 export function AppSidebar() {
+    const { auth } = usePage<SharedData>().props;
 
+    // Menu Dashboard dan menu non-dropdown lainnya tetap di sini
     const mainNavItems: NavItem[] = [
         {
             title: 'Dashboard',
             href: dashboard().url,
             icon: LayoutGrid,
-        },
-        {
-            title: 'Presensi Pegawai',
-            href: route('presence.index'),
-            icon: Clock,
-        },
-        {
-            title: 'Absensi Saya',
-            href: route('presence.self'),
-            icon: UserCheck,
         },
         {
             title: 'Lembur',
@@ -91,6 +85,66 @@ export function AppSidebar() {
                 <NavMain items={mainNavItems} />
 
                 <SidebarMenu className="px-2">
+                    {/* --- DROPDOWN PRESENSI --- */}
+                    <Collapsible asChild className="group/collapsible">
+                        <SidebarMenuItem>
+                            <CollapsibleTrigger asChild>
+                                <SidebarMenuButton tooltip="Presensi">
+                                    <CalendarCheck className="h-4 w-4" />
+                                    <span>Presensi</span>
+                                    <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                                </SidebarMenuButton>
+                            </CollapsibleTrigger>
+
+                            <CollapsibleContent>
+                                <SidebarMenuSub>
+                                    {/* Link: Presensi Pegawai (Admin/Semua) */}
+                                    <SidebarMenuSubItem>
+                                        <SidebarMenuSubButton asChild>
+                                            <Link href={route('presence.index')}>
+                                                <Clock className="h-4 w-4" />
+                                                <span>Presensi Pegawai</span>
+                                            </Link>
+                                        </SidebarMenuSubButton>
+                                    </SidebarMenuSubItem>
+
+                                    {/* Link: Absensi Saya */}
+                                    <SidebarMenuSubItem>
+                                        <SidebarMenuSubButton asChild>
+                                            <Link href={route('presence.self')}>
+                                                <UserCheck className="h-4 w-4" />
+                                                <span>Absensi Saya</span>
+                                            </Link>
+                                        </SidebarMenuSubButton>
+                                    </SidebarMenuSubItem>
+
+                                    {/* Link: Riwayat Absensi */}
+                                    <SidebarMenuSubItem>
+                                        <SidebarMenuSubButton asChild>
+                                            <Link href="/presence/self/history">
+                                                <History className="h-4 w-4" />
+                                                <span>Riwayat Absensi</span>
+                                            </Link>
+                                        </SidebarMenuSubButton>
+                                    </SidebarMenuSubItem>
+
+                                    {/* Link Khusus Guru: Absen Pulang */}
+                                    {auth.user.role === 'guru' && (
+                                        <SidebarMenuSubItem>
+                                            <SidebarMenuSubButton asChild>
+                                                <Link href="/presence/self/teacher-checkout">
+                                                    <BookOpenCheck className="h-4 w-4" />
+                                                    <span>Absen Pulang Guru</span>
+                                                </Link>
+                                            </SidebarMenuSubButton>
+                                        </SidebarMenuSubItem>
+                                    )}
+                                </SidebarMenuSub>
+                            </CollapsibleContent>
+                        </SidebarMenuItem>
+                    </Collapsible>
+
+                    {/* --- DROPDOWN LAPORAN --- */}
                     <Collapsible asChild className="group/collapsible">
                         <SidebarMenuItem>
                             <CollapsibleTrigger asChild>
@@ -100,7 +154,6 @@ export function AppSidebar() {
                                     <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
                                 </SidebarMenuButton>
                             </CollapsibleTrigger>
-
                             <CollapsibleContent>
                                 <SidebarMenuSub>
                                     <SidebarMenuSubItem>
@@ -111,7 +164,6 @@ export function AppSidebar() {
                                             </Link>
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
-
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton asChild>
                                             <Link href={route('report.salary.index')}>
@@ -120,7 +172,6 @@ export function AppSidebar() {
                                             </Link>
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
-
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton asChild>
                                             <Link href={route('report.overtime.index')}>
@@ -146,7 +197,6 @@ export function AppSidebar() {
 
                             <CollapsibleContent>
                                 <SidebarMenuSub>
-
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton asChild>
                                             <Link href={route('payroll.index')}>
@@ -158,7 +208,9 @@ export function AppSidebar() {
 
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton asChild>
-                                            <Link href={route('positions.index')}>
+                                            <Link
+                                                href={route('positions.index')}
+                                            >
                                                 <Briefcase className="h-4 w-4" />
                                                 <span>Position</span>
                                             </Link>
@@ -167,7 +219,11 @@ export function AppSidebar() {
 
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton asChild>
-                                            <Link href={route('position-allowances.index')}>
+                                            <Link
+                                                href={route(
+                                                    'position-allowances.index',
+                                                )}
+                                            >
                                                 <Layers className="h-4 w-4" />
                                                 <span>Tunjangan Jabatan</span>
                                             </Link>
@@ -176,7 +232,11 @@ export function AppSidebar() {
 
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton asChild>
-                                            <Link href={route('salary-components.index')}>
+                                            <Link
+                                                href={route(
+                                                    'salary-components.index',
+                                                )}
+                                            >
                                                 <Settings className="h-4 w-4" />
                                                 <span>Komponen Gaji</span>
                                             </Link>
@@ -185,7 +245,11 @@ export function AppSidebar() {
 
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton asChild>
-                                            <Link href={route('salary-rules.index')}>
+                                            <Link
+                                                href={route(
+                                                    'salary-rules.index',
+                                                )}
+                                            >
                                                 <GitBranch className="h-4 w-4" />
                                                 <span>Aturan Gaji</span>
                                             </Link>
@@ -194,13 +258,16 @@ export function AppSidebar() {
 
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton asChild>
-                                            <Link href={route('user-positions.index')}>
+                                            <Link
+                                                href={route(
+                                                    'user-positions.index',
+                                                )}
+                                            >
                                                 <Users2 className="h-4 w-4" />
                                                 <span>Assign Jabatan</span>
                                             </Link>
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
-
                                 </SidebarMenuSub>
                             </CollapsibleContent>
                         </SidebarMenuItem>
@@ -218,10 +285,11 @@ export function AppSidebar() {
 
                             <CollapsibleContent>
                                 <SidebarMenuSub>
-
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton asChild>
-                                            <Link href={route('employee.index')}>
+                                            <Link
+                                                href={route('employee.index')}
+                                            >
                                                 <Users2 className="h-4 w-4" />
                                                 <span>Pegawai</span>
                                             </Link>
@@ -245,12 +313,10 @@ export function AppSidebar() {
                                             </Link>
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
-
                                 </SidebarMenuSub>
                             </CollapsibleContent>
                         </SidebarMenuItem>
                     </Collapsible>
-
                 </SidebarMenu>
             </SidebarContent>
 

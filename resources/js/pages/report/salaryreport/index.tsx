@@ -1,3 +1,6 @@
+import { Head, router } from '@inertiajs/react';
+import { DollarSign, FileText, Users } from 'lucide-react';
+import { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -5,9 +8,6 @@ import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { Head, router } from '@inertiajs/react';
-import { DollarSign, FileText, Users } from 'lucide-react';
-import { useState } from 'react';
 import { getSalaryReportColumns } from './columns';
 
 const breadcrumbs = [
@@ -63,9 +63,9 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                                 </p>
                                 <h3 className="text-2xl font-bold">
                                     Rp{' '}
-                                    {Number(stats?.total_gaji ?? 0).toLocaleString(
-                                        'id-ID',
-                                    )}
+                                    {Number(
+                                        stats?.total_gaji ?? 0,
+                                    ).toLocaleString('id-ID')}
                                 </h3>
                             </div>
                         </CardContent>
@@ -99,6 +99,8 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                     <DataTable
                         data={data ?? []}
                         columns={getSalaryReportColumns()}
+                        searchKey="nama"
+                        searchPlaceholder="Cari nama..."
                         actions={
                             <div className="flex items-center gap-2">
                                 <Input
@@ -109,7 +111,10 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                                     }
                                     className="w-44"
                                 />
-                                <Button variant="outline" onClick={handleFilter}>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleFilter}
+                                >
                                     Filter
                                 </Button>
                             </div>

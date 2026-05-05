@@ -8,6 +8,7 @@ class Pegawai extends Model
 {
     protected $table = 'pegawai';
     protected $guarded = [];
+    public const STATUS_KERJA_OPTIONS = ['tetap', 'ptt'];
 
     public function user()
     {

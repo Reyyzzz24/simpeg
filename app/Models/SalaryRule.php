@@ -11,9 +11,12 @@ class SalaryRule extends Model
 {
     use HasFactory;
 
+    public const STATUS_KERJA_OPTIONS = ['tetap', 'ptt'];
+
     protected $fillable = [
         'role',
         'sub_role',
+        'status_kerja',
         'position_id',
         'is_active',
     ];

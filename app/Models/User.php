@@ -17,13 +17,21 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
-    protected $fillable = ['name', 'email', 'password', 'role'];
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+        'face_hash',
+        'face_registered_at',
+    ];
 
     protected $hidden = [
         'password',
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'face_hash',
     ];
 
     protected function casts(): array
@@ -32,6 +40,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'face_registered_at' => 'datetime',
         ];
     }
 

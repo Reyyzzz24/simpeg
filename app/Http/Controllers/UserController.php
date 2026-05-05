@@ -55,6 +55,7 @@ class UserController extends Controller
             Guru::create([
                 'user_id' => $user->id,
                 'nama' => $user->name,
+                'status_kerja' => 'tetap',
             ]);
         }
 
@@ -62,6 +63,7 @@ class UserController extends Controller
             Pegawai::create([
                 'user_id' => $user->id,
                 'nama' => $user->name,
+                'status_kerja' => 'tetap',
             ]);
         }
 
@@ -97,6 +99,7 @@ class UserController extends Controller
                 Guru::create([
                     'user_id' => $user->id,
                     'nama' => $user->name,
+                    'status_kerja' => 'tetap',
                 ]);
             }
 
@@ -104,6 +107,7 @@ class UserController extends Controller
                 Pegawai::create([
                     'user_id' => $user->id,
                     'nama' => $user->name,
+                    'status_kerja' => 'tetap',
                 ]);
             }
         } else {

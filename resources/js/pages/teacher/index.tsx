@@ -1,14 +1,14 @@
 // resources/js/pages/teacher/index.tsx
 
 import { Head } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { PageHeader } from '@/components/page-header';
-import { DataTable } from '@/components/ui/data-table';
-import { getColumns } from './columns';
-import { DashboardCard } from '@/components/dashboard-card';
-import { CardContent } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 import { useState } from 'react';
+import { DashboardCard } from '@/components/dashboard-card';
+import { PageHeader } from '@/components/page-header';
+import { CardContent } from '@/components/ui/card';
+import { DataTable } from '@/components/ui/data-table';
+import AppLayout from '@/layouts/app-layout';
+import { getColumns } from './columns';
 import DeleteConfirmDialog from './partials/delete-teacher-modal';
 import DetailTeacherModal from './partials/detail-teacher-modal';
 import EditTeacherModal from './partials/edit-teacher-modal';
@@ -19,9 +19,10 @@ const breadcrumbs = [
 ];
 
 export default function TeacherIndex({ teachers, positions, stats }: any) {
-    const [edit, setEdit] = useState(null)
-    const [detail, setDetail] = useState(null)
-    const [del, setDel] = useState(null)
+    const [edit, setEdit] = useState(null);
+    const [detail, setDetail] = useState(null);
+    const [del, setDel] = useState(null);
+
     return (
         <>
             <Head title="Daftar Guru" />
@@ -38,18 +39,24 @@ export default function TeacherIndex({ teachers, positions, stats }: any) {
 
                 <div className="grid gap-6 md:grid-cols-3">
                     <DashboardCard>
-                        <CardContent className="p-6 flex items-center gap-4">
-                            <div className="p-3 bg-green-100 text-green-600 rounded-lg"><Users /></div>
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-lg bg-green-100 p-3 text-green-600">
+                                <Users />
+                            </div>
                             <div>
-                                <p className="text-sm text-muted-foreground">Total Guru</p>
-                                <h3 className="text-2xl font-bold">{stats.total}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Total Guru
+                                </p>
+                                <h3 className="text-2xl font-bold">
+                                    {stats.total}
+                                </h3>
                             </div>
                         </CardContent>
                     </DashboardCard>
                 </div>
 
                 <div className="rounded-xl border bg-card p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold mb-4">Data Guru</h2>
+                    <h2 className="mb-4 text-lg font-semibold">Data Guru</h2>
                     <DataTable
                         columns={getColumns({
                             onEdit: setEdit,
@@ -57,6 +64,8 @@ export default function TeacherIndex({ teachers, positions, stats }: any) {
                             onDelete: setDel,
                         })}
                         data={teachers}
+                        searchKey="nama"
+                        searchPlaceholder="Cari nama guru..."
                     />
                     <EditTeacherModal
                         isOpen={!!edit}
@@ -72,7 +81,10 @@ export default function TeacherIndex({ teachers, positions, stats }: any) {
                     />
 
                     <DeleteConfirmDialog
-                        isOpen={!!del} onClose={() => setDel(null)} record={del} />
+                        isOpen={!!del}
+                        onClose={() => setDel(null)}
+                        record={del}
+                    />
                 </div>
             </div>
         </>

@@ -1,49 +1,49 @@
-import { Head, router, useForm } from '@inertiajs/react'
-import AppLayout from '@/layouts/app-layout'
-import { PageHeader } from '@/components/page-header'
-import { DashboardCard } from '@/components/dashboard-card'
-import { CardContent } from '@/components/ui/card'
-import { DataTable } from '@/components/ui/data-table'
-import { Button } from '@/components/ui/button'
-import { Users, DollarSign, Plus, Settings2, FileText } from 'lucide-react'
-import { useState } from 'react'
+import { Head, router, useForm } from '@inertiajs/react';
+import { Users, DollarSign, Plus, Settings2, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { DashboardCard } from '@/components/dashboard-card';
 
-import DeleteConfirmDialog from '@/components/delete-confirm-dialog'
-import AdjustmentModal from './partials/adjustment-modal'
-import DetailPayrollModal from './partials/detail-payroll-modal'
-import GeneratePayrollModal from './partials/generate-modal'
-import { getPayrollColumns } from './columns'
+import DeleteConfirmDialog from '@/components/delete-confirm-dialog';
+import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
+import { CardContent } from '@/components/ui/card';
+import { DataTable } from '@/components/ui/data-table';
+import AppLayout from '@/layouts/app-layout';
+import { getPayrollColumns } from './columns';
+import AdjustmentModal from './partials/adjustment-modal';
+import DetailPayrollModal from './partials/detail-payroll-modal';
+import GeneratePayrollModal from './partials/generate-modal';
 
-export default function PayrollIndex({ payrolls, stats, users, components }: any) {
+export default function PayrollIndex({
+    payrolls,
+    stats,
+    users,
+    components,
+}: any) {
+    const [detail, setDetail] = useState<any>(null);
+    const [loadingDetail, setLoadingDetail] = useState(false);
 
-    const [detail, setDetail] = useState<any>(null)
-    const [loadingDetail, setLoadingDetail] = useState(false)
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-    const [deleteId, setDeleteId] = useState<number | null>(null)
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [openGenerate, setOpenGenerate] = useState(false);
 
-    const [openGenerate, setOpenGenerate] = useState(false)
+    const [openAdjustment, setOpenAdjustment] = useState(false);
+    const [selectedAdjustment, setSelectedAdjustment] = useState<any[]>([]);
 
-    const [openAdjustment, setOpenAdjustment] = useState(false)
-    const [selectedAdjustment, setSelectedAdjustment] = useState<any[]>([])
-
-    const { delete: destroy, processing } = useForm()
-
-    const openDeleteDialog = (id: number) => {
-        setDeleteId(id)
-        setIsDeleteDialogOpen(true)
-    }
+    const { delete: destroy, processing } = useForm();
 
     const handleDetail = async (row: any) => {
-        setLoadingDetail(true)
+        setLoadingDetail(true);
+
         try {
-            const res = await fetch(`/payroll/${row.id}`)
-            const data = await res.json()
-            setDetail(data)
+            const res = await fetch(`/payroll/${row.id}`);
+            const data = await res.json();
+            setDetail(data);
         } finally {
-            setLoadingDetail(false)
+            setLoadingDetail(false);
         }
-    }
+    };
 
     const handleAddAdjustment = () => {
         setSelectedAdjustment([]); // Mengosongkan record agar isEdit = false
@@ -69,10 +69,11 @@ export default function PayrollIndex({ payrolls, stats, users, components }: any
             selectedAdjustment.forEach((adj) => {
                 router.delete(`/payroll-adjustments/${adj.id}`, {
                     preserveScroll: true,
-                    onSuccess: () => setIsDeleteDialogOpen(false)
+                    onSuccess: () => setIsDeleteDialogOpen(false),
                 });
             });
             setSelectedAdjustment([]);
+
             return;
         }
 
@@ -92,7 +93,6 @@ export default function PayrollIndex({ payrolls, stats, users, components }: any
             <Head title="Penggajian" />
 
             <div className="flex flex-col gap-8 p-4 md:p-8">
-
                 <PageHeader
                     title="Manajemen Penggajian"
                     subtitle="Sistem Informasi Kepegawaian"
@@ -103,12 +103,14 @@ export default function PayrollIndex({ payrolls, stats, users, components }: any
 
                 <div className="grid gap-6 md:grid-cols-3">
                     <DashboardCard>
-                        <CardContent className="p-6 flex items-center gap-4">
-                            <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-lg bg-blue-100 p-3 text-blue-600">
                                 <Users />
                             </div>
                             <div>
-                                <p className="text-sm text-muted-foreground">Total Payroll</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Total Payroll
+                                </p>
                                 <h3 className="text-2xl font-bold">
                                     {stats?.total ?? 0}
                                 </h3>
@@ -117,26 +119,33 @@ export default function PayrollIndex({ payrolls, stats, users, components }: any
                     </DashboardCard>
 
                     <DashboardCard>
-                        <CardContent className="p-6 flex items-center gap-4">
-                            <div className="p-3 bg-green-100 text-green-600 rounded-lg">
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-lg bg-green-100 p-3 text-green-600">
                                 <DollarSign />
                             </div>
                             <div>
-                                <p className="text-sm text-muted-foreground">Total Gaji</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Total Gaji
+                                </p>
                                 <h3 className="text-2xl font-bold">
-                                    Rp {Number(stats?.total_gaji ?? 0).toLocaleString('id-ID')}
+                                    Rp{' '}
+                                    {Number(
+                                        stats?.total_gaji ?? 0,
+                                    ).toLocaleString('id-ID')}
                                 </h3>
                             </div>
                         </CardContent>
                     </DashboardCard>
 
                     <DashboardCard>
-                        <CardContent className="p-6 flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 text-purple-600 rounded-lg">
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-lg bg-purple-100 p-3 text-purple-600">
                                 <FileText />
                             </div>
                             <div>
-                                <p className="text-sm text-muted-foreground">Rata-rata Gaji</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Rata-rata Gaji
+                                </p>
                                 <h3 className="text-2xl font-bold">
                                     {stats?.total
                                         ? `Rp ${(stats.total_gaji / stats.total).toLocaleString('id-ID')}`
@@ -148,7 +157,9 @@ export default function PayrollIndex({ payrolls, stats, users, components }: any
                 </div>
 
                 <div className="rounded-xl border bg-card p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold mb-4">Data Penggajian</h2>
+                    <h2 className="mb-4 text-lg font-semibold">
+                        Data Penggajian
+                    </h2>
 
                     <DataTable
                         data={payrolls ?? []}
@@ -157,14 +168,22 @@ export default function PayrollIndex({ payrolls, stats, users, components }: any
                             onEditAdjustment: handleEditAdjustment,
                             onDeleteAdjustment: handleDeleteAdjustment,
                         })}
+                        searchKey="user_name"
+                        searchPlaceholder="Cari nama pegawai..."
                         actions={
                             <div className="flex gap-2">
-                                <Button onClick={handleAddAdjustment} variant="outline">
+                                <Button
+                                    onClick={handleAddAdjustment}
+                                    variant="outline"
+                                >
                                     <Settings2 className="mr-2 size-4" />
                                     Tambah Adjustment
                                 </Button>
 
-                                <Button onClick={() => setOpenGenerate(true)} variant="cyan">
+                                <Button
+                                    onClick={() => setOpenGenerate(true)}
+                                    variant="cyan"
+                                >
                                     <Plus className="mr-2 size-4" />
                                     Generate Gaji
                                 </Button>
@@ -173,7 +192,7 @@ export default function PayrollIndex({ payrolls, stats, users, components }: any
                     />
 
                     {loadingDetail && (
-                        <p className="text-sm text-muted-foreground mt-2 animate-pulse">
+                        <p className="mt-2 animate-pulse text-sm text-muted-foreground">
                             Mengambil detail...
                         </p>
                     )}
@@ -183,8 +202,8 @@ export default function PayrollIndex({ payrolls, stats, users, components }: any
                     isOpen={openAdjustment}
                     record={selectedAdjustment}
                     onClose={() => {
-                        setOpenAdjustment(false)
-                        setSelectedAdjustment([])
+                        setOpenAdjustment(false);
+                        setSelectedAdjustment([]);
                     }}
                     users={users ?? []}
                     components={components ?? []}
@@ -211,9 +230,7 @@ export default function PayrollIndex({ payrolls, stats, users, components }: any
                 />
             </div>
         </>
-    )
+    );
 }
 
-PayrollIndex.layout = (page: React.ReactNode) => (
-    <AppLayout>{page}</AppLayout>
-)
+PayrollIndex.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;

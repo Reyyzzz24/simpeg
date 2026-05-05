@@ -1,3 +1,6 @@
+import { Head, router } from '@inertiajs/react';
+import { CheckCircle2, Clock, Timer } from 'lucide-react';
+import { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -12,9 +15,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import { Head, router } from '@inertiajs/react';
-import { CheckCircle2, Clock, Timer } from 'lucide-react';
-import { useState } from 'react';
 import { getOvertimeReportColumns } from './columns';
 
 const breadcrumbs = [
@@ -122,6 +122,8 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
                     <DataTable
                         data={data ?? []}
                         columns={getOvertimeReportColumns()}
+                        searchKey="pegawai_nama"
+                        searchPlaceholder="Cari nama pegawai..."
                         actions={
                             <div className="flex flex-wrap items-center gap-2">
                                 <Input
@@ -140,12 +142,17 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
                                     }
                                     className="w-40"
                                 />
-                                <Select value={status} onValueChange={setStatus}>
+                                <Select
+                                    value={status}
+                                    onValueChange={setStatus}
+                                >
                                     <SelectTrigger className="w-40">
                                         <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Semua</SelectItem>
+                                        <SelectItem value="all">
+                                            Semua
+                                        </SelectItem>
                                         <SelectItem value="approved">
                                             Disetujui
                                         </SelectItem>
@@ -154,7 +161,10 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <Button variant="outline" onClick={handleFilter}>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleFilter}
+                                >
                                     Filter
                                 </Button>
                             </div>

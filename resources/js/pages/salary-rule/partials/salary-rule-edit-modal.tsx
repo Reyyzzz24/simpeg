@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react'
-import { router } from '@inertiajs/react'
+import { router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle
-} from '@/components/ui/dialog'
+    DialogTitle,
+} from '@/components/ui/dialog';
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Input } from '@/components/ui/input';
 
 import {
     Select,
@@ -17,7 +17,7 @@ import {
     SelectValue,
     SelectContent,
     SelectItem,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 
 export default function SalaryRuleEditModal({
     open,
@@ -25,7 +25,6 @@ export default function SalaryRuleEditModal({
     data,
     components,
 }: any) {
-
     /**
      * =========================
      * STATE
@@ -34,9 +33,10 @@ export default function SalaryRuleEditModal({
     const [form, setForm] = useState<any>({
         role: '',
         sub_role: '',
+        status_kerja: 'tetap',
         is_active: 1,
-        components: []
-    })
+        components: [],
+    });
 
     /**
      * =========================
@@ -47,9 +47,9 @@ export default function SalaryRuleEditModal({
         return items.map((c: any) => ({
             id: Number(c.component_id),
             amount_type: c.amount_type ?? 'fixed',
-            amount: Number(c.amount ?? 0)
-        }))
-    }
+            amount: Number(c.amount ?? 0),
+        }));
+    };
 
     /**
      * =========================
@@ -57,17 +57,26 @@ export default function SalaryRuleEditModal({
      * =========================
      */
     useEffect(() => {
-        if (!data) return
+        if (!data) {
+            return;
+        }
 
-        setForm({
-            role: data.role ?? '',
-            sub_role: data.sub_role ?? '',
-            is_active: Number(data.is_active ?? 1),
-            components: normalizeComponents(data.salary_rule_components)
-        })
-    }, [data])
+        const timeoutId = window.setTimeout(() => {
+            setForm({
+                role: data.role ?? '',
+                sub_role: data.sub_role ?? '',
+                status_kerja: data.status_kerja ?? 'tetap',
+                is_active: Number(data.is_active ?? 1),
+                components: normalizeComponents(data.salary_rule_components),
+            });
+        }, 0);
 
-    if (!open || !data) return null
+        return () => window.clearTimeout(timeoutId);
+    }, [data]);
+
+    if (!open || !data) {
+        return null;
+    }
 
     /**
      * =========================
@@ -75,10 +84,12 @@ export default function SalaryRuleEditModal({
      * =========================
      */
     const addComponent = (id: string) => {
-        const numId = Number(id)
+        const numId = Number(id);
 
         setForm((prev: any) => {
-            if (prev.components.some((c: any) => Number(c.id) === numId)) return prev
+            if (prev.components.some((c: any) => Number(c.id) === numId)) {
+                return prev;
+            }
 
             return {
                 ...prev,
@@ -87,12 +98,12 @@ export default function SalaryRuleEditModal({
                     {
                         id: numId,
                         amount_type: 'fixed',
-                        amount: 0
-                    }
-                ]
-            }
-        })
-    }
+                        amount: 0,
+                    },
+                ],
+            };
+        });
+    };
 
     /**
      * =========================
@@ -103,10 +114,10 @@ export default function SalaryRuleEditModal({
         setForm((prev: any) => ({
             ...prev,
             components: prev.components.filter(
-                (c: any) => Number(c.id) !== Number(id)
-            )
-        }))
-    }
+                (c: any) => Number(c.id) !== Number(id),
+            ),
+        }));
+    };
 
     /**
      * =========================
@@ -117,12 +128,10 @@ export default function SalaryRuleEditModal({
         setForm((prev: any) => ({
             ...prev,
             components: prev.components.map((c: any) =>
-                Number(c.id) === Number(id)
-                    ? { ...c, [key]: value }
-                    : c
-            )
-        }))
-    }
+                Number(c.id) === Number(id) ? { ...c, [key]: value } : c,
+            ),
+        }));
+    };
 
     /**
      * =========================
@@ -130,20 +139,25 @@ export default function SalaryRuleEditModal({
      * =========================
      */
     const submit = () => {
-        router.put(`/salary-rules/${data.id}`, {
-            role: form.role,
-            sub_role: form.sub_role,
-            is_active: form.is_active,
+        router.put(
+            `/salary-rules/${data.id}`,
+            {
+                role: form.role,
+                sub_role: form.sub_role,
+                status_kerja: form.status_kerja,
+                is_active: form.is_active,
 
-            components: form.components.map((c: any) => ({
-                id: c.id,
-                amount_type: c.amount_type,
-                amount: c.amount
-            }))
-        }, {
-            onSuccess: () => setOpen(false)
-        })
-    }
+                components: form.components.map((c: any) => ({
+                    id: c.id,
+                    amount_type: c.amount_type,
+                    amount: c.amount,
+                })),
+            },
+            {
+                onSuccess: () => setOpen(false),
+            },
+        );
+    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -153,14 +167,13 @@ export default function SalaryRuleEditModal({
                 </DialogHeader>
 
                 <div className="space-y-4">
-
                     {/* ROLE */}
                     <Input
                         value={form.role}
                         onChange={(e) =>
                             setForm((prev: any) => ({
                                 ...prev,
-                                role: e.target.value
+                                role: e.target.value,
                             }))
                         }
                         placeholder="Role"
@@ -172,11 +185,30 @@ export default function SalaryRuleEditModal({
                         onChange={(e) =>
                             setForm((prev: any) => ({
                                 ...prev,
-                                sub_role: e.target.value
+                                sub_role: e.target.value,
                             }))
                         }
                         placeholder="Sub Role"
                     />
+
+                    {/* STATUS KERJA */}
+                    <Select
+                        value={form.status_kerja}
+                        onValueChange={(value) =>
+                            setForm((prev: any) => ({
+                                ...prev,
+                                status_kerja: value,
+                            }))
+                        }
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Status Kerja" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="tetap">Tetap</SelectItem>
+                            <SelectItem value="ptt">PTT</SelectItem>
+                        </SelectContent>
+                    </Select>
 
                     {/* ADD COMPONENT */}
                     <Select onValueChange={addComponent}>
@@ -199,20 +231,25 @@ export default function SalaryRuleEditModal({
                     <div className="space-y-3">
                         {form.components.map((c: any) => {
                             const comp = components?.find(
-                                (x: any) => Number(x.id) === Number(c.id)
-                            )
+                                (x: any) => Number(x.id) === Number(c.id),
+                            );
 
                             return (
-                                <div key={String(c.id)} className="border p-3 rounded space-y-2">
+                                <div
+                                    key={String(c.id)}
+                                    className="space-y-2 rounded border p-3"
+                                >
                                     {/* HEADER */}
                                     <div className="flex justify-between">
-                                        <span className="font-medium text-sm">
+                                        <span className="text-sm font-medium">
                                             {comp?.name ?? 'Unknown Component'}
                                         </span>
                                         <button
                                             type="button"
                                             className="text-red-500"
-                                            onClick={() => removeComponent(c.id)}
+                                            onClick={() =>
+                                                removeComponent(c.id)
+                                            }
                                         >
                                             ✕
                                         </button>
@@ -223,16 +260,26 @@ export default function SalaryRuleEditModal({
                                         <Select
                                             value={String(c.amount_type)}
                                             onValueChange={(value) =>
-                                                updateComponent(c.id, 'amount_type', value)
+                                                updateComponent(
+                                                    c.id,
+                                                    'amount_type',
+                                                    value,
+                                                )
                                             }
                                         >
                                             <SelectTrigger className="h-8 text-xs">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="fixed">Fixed</SelectItem>
-                                                <SelectItem value="percentage">Percentage</SelectItem>
-                                                <SelectItem value="formula">Formula (Hadir)</SelectItem>
+                                                <SelectItem value="fixed">
+                                                    Fixed
+                                                </SelectItem>
+                                                <SelectItem value="percentage">
+                                                    Percentage
+                                                </SelectItem>
+                                                <SelectItem value="formula">
+                                                    Formula (Hadir)
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
 
@@ -245,7 +292,7 @@ export default function SalaryRuleEditModal({
                                                 updateComponent(
                                                     c.id,
                                                     'amount',
-                                                    Number(e.target.value || 0)
+                                                    Number(e.target.value || 0),
                                                 )
                                             }
                                             placeholder="Amount"
@@ -254,14 +301,19 @@ export default function SalaryRuleEditModal({
 
                                     {/* KETERANGAN DINAMIS */}
                                     {c.amount_type === 'formula' && (
-                                        <div className="bg-blue-50 p-2 rounded border border-blue-100">
+                                        <div className="rounded border border-blue-100 bg-blue-50 p-2">
                                             <p className="text-[10px] text-blue-700">
-                                                <strong>Logika Formula:</strong> Nominal di atas akan dikalikan dengan jumlah record absensi berstatus <strong>'hadir'</strong> pada periode terpilih.
+                                                <strong>Logika Formula:</strong>{' '}
+                                                Nominal di atas akan dikalikan
+                                                dengan jumlah record absensi
+                                                berstatus{' '}
+                                                <strong>'hadir'</strong> pada
+                                                periode terpilih.
                                             </p>
                                         </div>
                                     )}
                                 </div>
-                            )
+                            );
                         })}
                     </div>
 
@@ -271,7 +323,7 @@ export default function SalaryRuleEditModal({
                         onValueChange={(value) =>
                             setForm((prev: any) => ({
                                 ...prev,
-                                is_active: Number(value)
+                                is_active: Number(value),
                             }))
                         }
                     >
@@ -287,9 +339,8 @@ export default function SalaryRuleEditModal({
                     <Button className="w-full" onClick={submit}>
                         Simpan
                     </Button>
-
                 </div>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

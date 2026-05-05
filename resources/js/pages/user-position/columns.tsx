@@ -1,25 +1,27 @@
-import { ColumnDef } from '@tanstack/react-table'
-import { Button } from '@/components/ui/button'
+import type { ColumnDef } from '@tanstack/react-table';
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+} from '@/components/ui/dropdown-menu';
 
 export const getColumns = (opts: {
-    onEdit: (row: any) => void,
-    onDelete: (row: any) => void
+    onEdit: (row: any) => void;
+    onDelete: (row: any) => void;
 }): ColumnDef<any>[] => [
     {
         id: 'user',
+        accessorFn: (row) => row.user?.name ?? '',
         header: 'User',
         cell: ({ row }) => row.original.user?.name ?? '-',
     },
     {
         id: 'position',
+        accessorFn: (row) => row.position?.name ?? '',
         header: 'Jabatan',
         cell: ({ row }) => row.original.position?.name ?? '-',
     },
@@ -27,7 +29,7 @@ export const getColumns = (opts: {
         id: 'actions',
         header: 'Aksi',
         cell: ({ row }) => {
-            const record = row.original
+            const record = row.original;
 
             return (
                 <DropdownMenu>
@@ -54,7 +56,7 @@ export const getColumns = (opts: {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-            )
+            );
         },
     },
-]
+];

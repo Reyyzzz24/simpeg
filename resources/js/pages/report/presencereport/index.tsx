@@ -1,13 +1,13 @@
+import { Head, router } from '@inertiajs/react';
+import { Clock, Users } from 'lucide-react';
+import { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
 import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import AppLayout from '@/layouts/app-layout';
-import { Head, router } from '@inertiajs/react';
-import { Clock, Users } from 'lucide-react';
-import { useState } from 'react';
-import { getReportColumns } from './columns';
 import ReportFilter from '../partials/report-filter';
+import { getReportColumns } from './columns';
 
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -18,6 +18,7 @@ export default function PresenceReportIndex({ data, filters }: any) {
     const statusCount = data?.reduce((acc: any, item: any) => {
         const status = item.status_disiplin ?? 'unknown';
         acc[status] = (acc[status] ?? 0) + 1;
+
         return acc;
     }, {});
 
@@ -50,7 +51,11 @@ export default function PresenceReportIndex({ data, filters }: any) {
                 <div className="grid gap-6 md:grid-cols-5">
                     {[
                         ['Hadir', 'hadir', 'bg-green-100 text-green-600'],
-                        ['Terlambat', 'terlambat', 'bg-yellow-100 text-yellow-600'],
+                        [
+                            'Terlambat',
+                            'terlambat',
+                            'bg-yellow-100 text-yellow-600',
+                        ],
                         ['Alpha', 'alpha', 'bg-red-100 text-red-600'],
                         ['Izin', 'izin', 'bg-blue-100 text-blue-600'],
                         ['Sakit', 'sakit', 'bg-purple-100 text-purple-600'],
@@ -58,7 +63,11 @@ export default function PresenceReportIndex({ data, filters }: any) {
                         <DashboardCard key={key}>
                             <CardContent className="flex items-center gap-4 p-6">
                                 <div className={`rounded-lg p-3 ${color}`}>
-                                    {key === 'terlambat' ? <Clock /> : <Users />}
+                                    {key === 'terlambat' ? (
+                                        <Clock />
+                                    ) : (
+                                        <Users />
+                                    )}
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">
@@ -81,6 +90,8 @@ export default function PresenceReportIndex({ data, filters }: any) {
                     <DataTable
                         data={data ?? []}
                         columns={getReportColumns()}
+                        searchKey="nama"
+                        searchPlaceholder="Cari nama..."
                         actions={
                             <ReportFilter
                                 type={type}

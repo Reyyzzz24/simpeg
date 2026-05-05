@@ -40,7 +40,16 @@ import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Check, ChevronsUpDown, Filter, RefreshCcw, Settings2 } from "lucide-react"
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    Check,
+    ChevronsUpDown,
+    Filter,
+    RefreshCcw,
+    Settings2,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface DataTableFilterOption {
@@ -169,6 +178,42 @@ function FilterPanel({ filters }: { filters: DataTableFilter[] }) {
                 </div>
             </DropdownMenuContent>
         </DropdownMenu>
+    )
+}
+
+function SortableHeader<TData, TValue>({
+    header,
+}: {
+    header: import("@tanstack/react-table").Header<TData, TValue>
+}) {
+    if (header.isPlaceholder) {
+        return null
+    }
+
+    const label = flexRender(header.column.columnDef.header, header.getContext())
+
+    if (!header.column.getCanSort()) {
+        return label
+    }
+
+    const direction = header.column.getIsSorted()
+
+    return (
+        <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-3 h-8 gap-2 px-3 text-left font-semibold"
+            onClick={header.column.getToggleSortingHandler()}
+        >
+            <span className="truncate">{label}</span>
+            {direction === "asc" ? (
+                <ArrowUp className="h-4 w-4 shrink-0" />
+            ) : direction === "desc" ? (
+                <ArrowDown className="h-4 w-4 shrink-0" />
+            ) : (
+                <ArrowUpDown className="h-4 w-4 shrink-0 opacity-50" />
+            )}
+        </Button>
     )
 }
 
@@ -372,12 +417,7 @@ export function DataTable<TData, TValue>({
                                 {headerGroup.headers.map((header) => {
                                     return (
                                         <TableHead key={header.id}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext()
-                                                )}
+                                            <SortableHeader header={header} />
                                         </TableHead>
                                     )
                                 })}

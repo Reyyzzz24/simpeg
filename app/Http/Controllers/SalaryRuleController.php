@@ -8,6 +8,7 @@ use App\Models\SalaryRule;
 use App\Models\SalaryComponent;
 use App\Models\SalaryRuleComponent;
 use App\Models\Position;
+use Illuminate\Validation\Rule;
 
 class SalaryRuleController extends Controller
 {
@@ -31,6 +32,7 @@ class SalaryRuleController extends Controller
         $validated = $request->validate([
             'role' => 'required|string',
             'sub_role' => 'nullable|string',
+            'status_kerja' => ['required', Rule::in(SalaryRule::STATUS_KERJA_OPTIONS)],
             'is_active' => 'required|boolean',
             'components' => 'required|array',
             'components.*.id' => 'required|exists:salary_components,id',
@@ -41,6 +43,7 @@ class SalaryRuleController extends Controller
         $rule = SalaryRule::create([
             'role' => $validated['role'],
             'sub_role' => $validated['sub_role'],
+            'status_kerja' => $validated['status_kerja'],
             'is_active' => $validated['is_active'],
         ]);
 
@@ -61,6 +64,7 @@ class SalaryRuleController extends Controller
         $validated = $request->validate([
             'role' => 'required|string',
             'sub_role' => 'required|string',
+            'status_kerja' => ['required', Rule::in(SalaryRule::STATUS_KERJA_OPTIONS)],
             'is_active' => 'required|boolean',
             'components' => 'required|array',
             'components.*.id' => 'required|exists:salary_components,id',
@@ -71,6 +75,7 @@ class SalaryRuleController extends Controller
         $salaryRule->update([
             'role' => $validated['role'],
             'sub_role' => $validated['sub_role'],
+            'status_kerja' => $validated['status_kerja'],
             'is_active' => $validated['is_active'],
         ]);
 

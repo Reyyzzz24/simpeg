@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PresenceController;
+use App\Http\Controllers\TimeSettingController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\DashboardController;
@@ -34,7 +35,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('presence')->name('presence.')->group(function () {
         Route::get('/', [PresenceController::class, 'index'])->name('index');
         Route::get('/self', [PresenceController::class, 'self'])->name('self');
+        Route::get('/self/history', [PresenceController::class, 'selfHistory'])->name('self.history');
         Route::post('/self/face', [PresenceController::class, 'markFacePresence'])->name('self.face');
+        Route::post('/self/face/register', [PresenceController::class, 'registerFace'])->name('self.face.register');
+        Route::get('/self/teacher-checkout', [PresenceController::class, 'teacherCheckout'])->name('teacher-checkout');
+        Route::post('/self/teacher-checkout', [PresenceController::class, 'storeTeacherCheckout'])->name('teacher-checkout.store');
+        Route::put('/time-window', [TimeSettingController::class, 'update'])->name('time-window.update');
         Route::post('/store', [PresenceController::class, 'store'])->name('store');
         Route::post('/mark', [PresenceController::class, 'markPresence'])->name('mark');
 
@@ -129,7 +135,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [SalaryRuleController::class, 'index'])->name('index');
         Route::post('/', [SalaryRuleController::class, 'store'])->name('store');
         Route::put('/{salaryRule}', [SalaryRuleController::class, 'update'])->name('update');
-        Route::delete('/{id}', [SalaryRuleController::class, 'destroy'])->name('destroy');
+        Route::delete('/{salaryRule}', [SalaryRuleController::class, 'destroy'])->name('destroy');
     });
     Route::prefix('user-positions')->name('user-positions.')->group(function () {
         Route::get('/', [UserPositionController::class, 'index'])->name('index');

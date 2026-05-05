@@ -23,10 +23,13 @@ class PayrollService
         $total = 0;
 
         $subRole = null;
+        $statusKerja = SalaryRule::STATUS_KERJA_OPTIONS[0];
         if ($user->role === 'guru' && $user->guru) {
             $subRole = $user->guru->sub_role;
+            $statusKerja = $user->guru->status_kerja ?? SalaryRule::STATUS_KERJA_OPTIONS[0];
         } elseif ($user->role === 'pegawai' && $user->pegawai) {
             $subRole = $user->pegawai->sub_role;
+            $statusKerja = $user->pegawai->status_kerja ?? SalaryRule::STATUS_KERJA_OPTIONS[0];
         } else {
             $subRole = $user->sub_role;
         }
@@ -34,13 +37,14 @@ class PayrollService
         $baseRule = SalaryRule::with('salaryRuleComponents.component')
             ->where('role', $user->role)
             ->where('sub_role', $subRole)
+            ->where('status_kerja', $statusKerja)
             ->where('is_active', 1)
             ->first();
 
         if ($baseRule) {
             foreach ($baseRule->salaryRuleComponents as $item) {
                 $amount = (float) $item->amount;
-                $note = "Rule: " . ($subRole ?? $user->role);
+                $note = "Rule: " . ($subRole ?? $user->role) . " - " . strtoupper($statusKerja);
 
                 // LOGIKA FORMULA (BERDASARKAN ABSENSI)
                 if ($item->amount_type === 'formula') {
