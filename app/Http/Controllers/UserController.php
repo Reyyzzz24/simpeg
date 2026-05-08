@@ -6,8 +6,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
-use App\Models\Guru;
-use App\Models\Pegawai;
+use App\Models\Teacher;
+use App\Models\Employee;
+use App\Models\Role;
 
 class UserController extends Controller
 {
@@ -29,9 +30,19 @@ class UserController extends Controller
             'total' => $users->count(),
         ];
 
+        $roles = Role::query()
+            ->orderBy('name', 'asc')
+            ->get()
+            ->map(fn (Role $r) => [
+                'id' => $r->id,
+                'name' => $r->name,
+                'guard_name' => $r->guard_name,
+            ]);
+
         return Inertia::render('users/index', [
             'users' => $users,
             'stats' => $stats,
+            'roles' => $roles,
         ]);
     }
 
@@ -40,7 +51,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'role' => 'required|string',
+            'role' => 'required|string|exists:roles,name',
             'password' => 'required|string|min:8',
         ]);
 
@@ -52,7 +63,7 @@ class UserController extends Controller
         ]);
 
         if ($user->role === 'guru') {
-            Guru::create([
+            Teacher::create([
                 'user_id' => $user->id,
                 'nama' => $user->name,
                 'status_kerja' => 'tetap',
@@ -60,7 +71,7 @@ class UserController extends Controller
         }
 
         if ($user->role === 'pegawai') {
-            Pegawai::create([
+            Employee::create([
                 'user_id' => $user->id,
                 'nama' => $user->name,
                 'status_kerja' => 'tetap',
@@ -75,7 +86,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|string',
+            'role' => 'required|string|exists:roles,name',
             'password' => 'nullable|string|min:8',
         ]);
 
@@ -96,7 +107,7 @@ class UserController extends Controller
             $user->pegawai()->delete();
 
             if ($user->role === 'guru') {
-                Guru::create([
+                Teacher::create([
                     'user_id' => $user->id,
                     'nama' => $user->name,
                     'status_kerja' => 'tetap',
@@ -104,7 +115,7 @@ class UserController extends Controller
             }
 
             if ($user->role === 'pegawai') {
-                Pegawai::create([
+                Employee::create([
                     'user_id' => $user->id,
                     'nama' => $user->name,
                     'status_kerja' => 'tetap',

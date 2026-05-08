@@ -39,8 +39,8 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'name' => fn () => AppSetting::current()->app_name,
-            'appSetting' => fn () => AppSetting::current()->only([
+            'name' => fn() => AppSetting::current()->app_name,
+            'appSetting' => fn() => AppSetting::current()->only([
                 'app_name',
                 'branch_name',
                 'logo_path',
@@ -51,8 +51,11 @@ class HandleInertiaRequests extends Middleware
             ]),
             'auth' => [
                 'user' => $request->user(),
+                'permissions' => $request->user()
+                    ? $request->user()->getAllPermissions()->pluck('name')
+                    : [],
             ],
-            'flash' => fn () => [
+            'flash' => fn() => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
             ],

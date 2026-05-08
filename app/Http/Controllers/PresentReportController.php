@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Absensi;
+use App\Models\Attendance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +15,7 @@ class PresentReportController extends Controller
         $start = $request->input('start_date');
         $end = $request->input('end_date');
 
-        $query = Absensi::with('user');
+        $query = Attendance::with('user');
 
         if ($start && $end) {
             $query->whereBetween('tanggal', [$start, $end]);

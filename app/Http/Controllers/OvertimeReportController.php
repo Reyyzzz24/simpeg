@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Lembur;
+use App\Models\Overtime;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +15,7 @@ class OvertimeReportController extends Controller
         $end = $request->input('end_date');
         $status = $request->input('status', 'all');
 
-        $query = Lembur::with('pegawai:id,nama,nip');
+        $query = Overtime::with('employee:id,nama,nip');
 
         if ($start && $end) {
             $query->whereBetween('tanggal', [$start, $end]);
@@ -33,7 +33,7 @@ class OvertimeReportController extends Controller
             ->latest('tanggal')
             ->latest('id')
             ->get()
-            ->map(function (Lembur $item) {
+            ->map(function (Overtime $item) {
                 $jamMulai = Carbon::parse($item->jam_mulai);
                 $jamSelesai = Carbon::parse($item->jam_selesai);
 
@@ -45,8 +45,8 @@ class OvertimeReportController extends Controller
 
                 return [
                     'id' => $item->id,
-                    'pegawai_nama' => $item->pegawai?->nama ?? '-',
-                    'pegawai_nip' => $item->pegawai?->nip,
+                    'pegawai_nama' => $item->employee?->nama ?? '-',
+                    'pegawai_nip' => $item->employee?->nip,
                     'tanggal' => $item->tanggal?->format('Y-m-d'),
                     'jam_mulai' => substr((string) $item->jam_mulai, 0, 5),
                     'jam_selesai' => substr((string) $item->jam_selesai, 0, 5),

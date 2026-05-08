@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Guru;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Position;
@@ -12,7 +12,7 @@ class TeacherController extends Controller
 {
     public function index(Request $request)
     {
-        $teachers = Guru::with('user', 'position')
+        $teachers = Teacher::with('user', 'position')
             ->orderBy('nama', 'asc')
             ->get()
             ->map(function ($item) {
@@ -48,10 +48,10 @@ class TeacherController extends Controller
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'nama' => 'required|string|max:255',
-            'nuptk' => 'nullable|string|unique:guru,nuptk',
+            'nuptk' => 'nullable|string|unique:teachers,nuptk',
             'position_id' => 'nullable|exists:positions,id',
             'sub_role' => 'nullable|string',
-            'status_kerja' => ['required', Rule::in(Guru::STATUS_KERJA_OPTIONS)],
+            'status_kerja' => ['required', Rule::in(Teacher::STATUS_KERJA_OPTIONS)],
 
             'tarif_per_30_menit' => 'nullable|numeric',
             'transport_harian' => 'nullable|numeric',
@@ -59,7 +59,7 @@ class TeacherController extends Controller
             'tunjangan_praktik' => 'nullable|numeric',
         ]);
 
-        Guru::create([
+        Teacher::create([
             'user_id' => $validated['user_id'],
             'nama' => $validated['nama'],
             'nuptk' => $validated['nuptk'] ?? null,
@@ -76,13 +76,13 @@ class TeacherController extends Controller
         return back()->with('success', 'Data guru berhasil ditambahkan');
     }
 
-    public function update(Request $request, Guru $guru)
+    public function update(Request $request, Teacher $guru)
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'nuptk' => 'nullable|string|unique:guru,nuptk,' . $guru->id,
+            'nuptk' => 'nullable|string|unique:teachers,nuptk,' . $guru->id,
             'sub_role' => 'nullable|string',
-            'status_kerja' => ['required', Rule::in(Guru::STATUS_KERJA_OPTIONS)],
+            'status_kerja' => ['required', Rule::in(Teacher::STATUS_KERJA_OPTIONS)],
             'position_id' => 'nullable|exists:positions,id',
 
             'tarif_per_30_menit' => 'nullable|numeric',
@@ -114,7 +114,7 @@ class TeacherController extends Controller
         return back()->with('success', 'Data guru berhasil diperbarui');
     }
 
-    public function destroy(Guru $guru)
+    public function destroy(Teacher $guru)
     {
         $guru->delete();
 

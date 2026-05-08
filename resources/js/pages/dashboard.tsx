@@ -7,7 +7,7 @@ import { CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { useFirstName } from '@/hooks/use-first-name';
 import { type SharedData } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Users, Clock, FileText, Wallet } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { useEffect, useMemo, useState } from 'react';
@@ -21,6 +21,8 @@ const Dashboard = () => {
         auth,
         stats: initialStats = null,
         recent: initialRecent = [],
+        trend: initialTrend = [],
+        quickAccess: initialQuickAccess = null,
         announcements: initialAnnouncements = [],
     } = page.props as any;
 
@@ -38,6 +40,14 @@ const Dashboard = () => {
         }
     );
 
+    const [recent, setRecent] = useState<any[]>(initialRecent ?? []);
+    const [trend, setTrend] = useState<any[]>(initialTrend ?? []);
+    const [quickAccess, setQuickAccess] = useState<any>(
+        initialQuickAccess ?? {
+            salary_slip: { available: false, period: null },
+            work_report: { submitted_today: false, attendance_status: null },
+        }
+    );
     const [announcements] = useState<any[]>(initialAnnouncements ?? []);
     const [calendar, setCalendar] = useState<any[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -60,6 +70,14 @@ const Dashboard = () => {
                 if (!mounted) return;
 
                 setStats(json.stats);
+                setRecent(json.recent ?? []);
+                setTrend(json.trend ?? []);
+                setQuickAccess(
+                    json.quickAccess ?? {
+                        salary_slip: { available: false, period: null },
+                        work_report: { submitted_today: false, attendance_status: null },
+                    }
+                );
             } catch (e) {
                 console.error(e);
             }
@@ -132,6 +150,14 @@ const Dashboard = () => {
         late: 'text-amber-500 font-bold',
         alpha: 'text-red-500 font-bold',
     };
+
+    const avgPresenceRate = useMemo(() => {
+        if (!trend?.length) return 0;
+        return Math.round(
+            trend.reduce((acc: number, item: any) => acc + (item.present_rate ?? 0), 0) / trend.length
+        );
+    }, [trend]);
+
     return (
         <>
             <Head title="Dashboard Kepegawaian" />
@@ -152,7 +178,7 @@ const Dashboard = () => {
                         {/* Ringkasan Data Section */}
                         <div className="space-y-4">
                             <SectionHeader title="Ringkasan Data" />
-                            <div className="grid gap-6 md:grid-cols-3">
+                            <div className="grid gap-6 md:grid-cols-4">
                                 <DashboardCard animation="fade-up" delay={0.2}>
                                     <CardContent className="p-6">
                                         <div className="flex items-center gap-4">
@@ -194,7 +220,50 @@ const Dashboard = () => {
                                         </div>
                                     </CardContent>
                                 </DashboardCard>
+
+                                <DashboardCard animation="fade-up" delay={0.8}>
+                                    <CardContent className="p-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="rounded-lg bg-rose-100 p-3 text-rose-600">
+                                                <Users className="size-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Tidak Hadir</p>
+                                                <h4 className="text-2xl font-bold">{stats.total_absent}</h4>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </DashboardCard>
                             </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <SectionHeader title="Tren Kehadiran 7 Hari" />
+                                <span className="text-xs text-gray-500">Rata-rata hadir {avgPresenceRate}%</span>
+                            </div>
+                            <DashboardCard>
+                                <CardContent className="space-y-4 p-6">
+                                    {trend.length > 0 ? trend.map((item: any) => (
+                                        <div key={item.date} className="space-y-1">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="font-medium">{item.label}</span>
+                                                <span className="text-gray-500">
+                                                    {item.present}/{stats.total_users} hadir
+                                                </span>
+                                            </div>
+                                            <div className="h-2 w-full rounded-full bg-gray-100">
+                                                <div
+                                                    className="h-2 rounded-full bg-blue-500 transition-all"
+                                                    style={{ width: `${Math.max(4, item.present_rate ?? 0)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <p className="text-sm text-gray-500">Belum ada data tren kehadiran.</p>
+                                    )}
+                                </CardContent>
+                            </DashboardCard>
                         </div>
 
                         {/* Announcements Section */}
@@ -225,6 +294,30 @@ const Dashboard = () => {
                                     </div>
                                 )}
                             </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <SectionHeader title="Presensi Terbaru" />
+                            <DashboardCard>
+                                <CardContent className="p-4">
+                                    <div className="space-y-3">
+                                        {recent.length > 0 ? recent.slice(0, 5).map((item: any) => (
+                                            <div key={item.id} className="flex items-center justify-between border-b pb-2 last:border-b-0 last:pb-0">
+                                                <div>
+                                                    <p className="text-sm font-semibold">{item.user}</p>
+                                                    <p className="text-xs text-gray-500">{item.nip}</p>
+                                                </div>
+                                                <div className="text-right text-xs">
+                                                    <p>Masuk: {item.jam_masuk ?? '-'}</p>
+                                                    <p className="text-gray-500">Pulang: {item.jam_pulang ?? '-'}</p>
+                                                </div>
+                                            </div>
+                                        )) : (
+                                            <p className="text-sm text-gray-500">Belum ada aktivitas presensi hari ini.</p>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </DashboardCard>
                         </div>
                     </div>
 
@@ -267,26 +360,52 @@ const Dashboard = () => {
                         <div className="space-y-4">
                             <SectionHeader title="Akses Cepat" />
                             <div className="flex flex-col gap-3">
-                                <DashboardCard className="hover:bg-gray-50 transition-colors cursor-pointer">
-                                    <CardContent className="flex items-center gap-4 p-4">
-                                        <div className="rounded-lg bg-green-100 p-2 text-green-600">
-                                            <Wallet className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-semibold">Slip Gaji</p>
-                                            <p className="text-xs text-gray-500">Periode Maret tersedia</p>
-                                        </div>
-                                    </CardContent>
-                                </DashboardCard>
+                                <Link href="/payroll">
+                                    <DashboardCard className="cursor-pointer transition-colors hover:bg-gray-50">
+                                        <CardContent className="flex items-center gap-4 p-4">
+                                            <div className="rounded-lg bg-green-100 p-2 text-green-600">
+                                                <Wallet className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold">Slip Gaji</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {quickAccess.salary_slip?.available
+                                                        ? `Periode ${quickAccess.salary_slip.period} tersedia`
+                                                        : 'Belum ada slip gaji terbaru'}
+                                                </p>
+                                            </div>
+                                        </CardContent>
+                                    </DashboardCard>
+                                </Link>
 
-                                <DashboardCard className="hover:bg-gray-50 transition-colors cursor-pointer">
+                                <Link href="/report/overtime">
+                                    <DashboardCard className="cursor-pointer transition-colors hover:bg-gray-50">
+                                        <CardContent className="flex items-center gap-4 p-4">
+                                            <div className="rounded-lg bg-indigo-100 p-2 text-indigo-600">
+                                                <FileText className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold">Laporan Kerja</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {quickAccess.work_report?.submitted_today
+                                                        ? 'Laporan hari ini sudah tercatat'
+                                                        : 'Laporan hari ini belum lengkap'}
+                                                </p>
+                                            </div>
+                                        </CardContent>
+                                    </DashboardCard>
+                                </Link>
+
+                                <DashboardCard>
                                     <CardContent className="flex items-center gap-4 p-4">
-                                        <div className="rounded-lg bg-indigo-100 p-2 text-indigo-600">
-                                            <FileText className="h-5 w-5" />
+                                        <div className="rounded-lg bg-amber-100 p-2 text-amber-600">
+                                            <Clock className="h-5 w-5" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-semibold">Laporan Kerja</p>
-                                            <p className="text-xs text-gray-500">Lengkapi log harian</p>
+                                            <p className="text-sm font-semibold">Status Kehadiran Hari Ini</p>
+                                            <p className="text-xs text-gray-500">
+                                                {quickAccess.work_report?.attendance_status ?? 'Belum ada data kehadiran'}
+                                            </p>
                                         </div>
                                     </CardContent>
                                 </DashboardCard>
@@ -298,7 +417,7 @@ const Dashboard = () => {
             </div>
         </>
     );
-};;
+};
 
 export default Dashboard;
 

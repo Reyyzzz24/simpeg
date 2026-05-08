@@ -6,10 +6,12 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
+    DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 
-import { MoreHorizontal } from 'lucide-react'
+import { Edit, MoreHorizontal, Trash2 } from 'lucide-react'
 
 export const columns: ColumnDef<any>[] = [
     {
@@ -54,24 +56,28 @@ export function getColumns(opts?: {
         cell: ({ row }) => (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Buka menu</span>
                         <MoreHorizontal className="size-4" />
                     </Button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
 
                     <DropdownMenuItem onClick={() => opts?.onEdit?.(row.original)}>
+                        <Edit className="mr-2 h-4 w-4" />
                         Edit
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
                         onClick={() => opts?.onDelete?.(row.original)}
-                        className="text-red-600"
+                        className="text-red-600 focus:text-red-600"
                     >
+                        <Trash2 className="mr-2 h-4 w-4" />
                         Hapus
                     </DropdownMenuItem>
-
                 </DropdownMenuContent>
             </DropdownMenu>
         ),

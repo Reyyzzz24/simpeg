@@ -4,10 +4,12 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { MoreHorizontal } from 'lucide-react'
+import { Edit, Eye, MoreHorizontal, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 // Helper untuk format mata uang Rupiah
@@ -20,17 +22,17 @@ const formatCurrency = (value: number) => {
 }
 
 export const columns: ColumnDef<any>[] = [
-    { 
-        accessorKey: 'nama', 
-        header: 'Nama' 
+    {
+        accessorKey: 'nama',
+        header: 'Nama'
     },
-    { 
-        accessorKey: 'nip', 
+    {
+        accessorKey: 'nip',
         header: 'NIP',
-        cell: ({ row }) => row.original.nip || '-' 
+        cell: ({ row }) => row.original.nip || '-'
     },
-    { 
-        accessorKey: 'sub_role', 
+    {
+        accessorKey: 'sub_role',
         header: 'Sub Role',
         cell: ({ row }) => (
             <Badge variant="secondary" className="uppercase">
@@ -38,8 +40,8 @@ export const columns: ColumnDef<any>[] = [
             </Badge>
         )
     },
-    { 
-        accessorKey: 'status_kerja', 
+    {
+        accessorKey: 'status_kerja',
         header: 'Status',
         cell: ({ row }) => (
             <Badge variant="outline" className="capitalize">
@@ -47,11 +49,11 @@ export const columns: ColumnDef<any>[] = [
             </Badge>
         )
     },
-    { 
-        accessorKey: 'jabatan', 
+    {
+        accessorKey: 'jabatan',
         header: 'Jabatan',
         // Mengambil nama jabatan dari hasil map di Controller[cite: 8]
-        cell: ({ row }) => row.original.jabatan || '-' 
+        cell: ({ row }) => row.original.jabatan || '-'
     },
     {
         accessorKey: 'gaji_pokok',
@@ -81,22 +83,31 @@ export function getColumns(opts?: {
         cell: ({ row }) => (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="size-4" />
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Buka menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+
                     <DropdownMenuItem onClick={() => opts?.onView?.(row.original)}>
+                        <Eye className="mr-2 h-4 w-4" />
                         Detail
                     </DropdownMenuItem>
+
                     <DropdownMenuItem onClick={() => opts?.onEdit?.(row.original)}>
+                        <Edit className="mr-2 h-4 w-4" />
                         Edit
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                         onClick={() => opts?.onDelete?.(row.original)}
-                        className="text-red-500 focus:text-red-500"
+                        className="text-red-600 focus:text-red-600"
                     >
+                        <Trash2 className="mr-2 h-4 w-4" />
                         Hapus
                     </DropdownMenuItem>
                 </DropdownMenuContent>

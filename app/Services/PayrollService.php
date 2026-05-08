@@ -8,7 +8,7 @@ use App\Models\PayrollDetail;
 use App\Models\SalaryComponent;
 use App\Models\SalaryRule;
 use App\Models\PayrollAdjustment;
-use App\Models\Absensi;
+use App\Models\Attendance;
 
 class PayrollService
 {
@@ -51,7 +51,7 @@ class PayrollService
                     $year = date('Y', strtotime($periode));
                     $month = date('m', strtotime($periode));
 
-                    $jumlahHadir = Absensi::where('user_id', $user->id)
+                    $jumlahHadir = Attendance::where('user_id', $user->id)
                         ->whereYear('tanggal', $year)
                         ->whereMonth('tanggal', $month)
                         ->where('status_disiplin', 'hadir') // Menggunakan kolom status_disiplin sesuai DB

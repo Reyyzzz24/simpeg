@@ -2,7 +2,7 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { Users, DollarSign, Plus, Settings2, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
-
+import ConfirmDialog from '@/components/confirm-dialog';
 import DeleteConfirmDialog from '@/components/delete-confirm-dialog';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -27,11 +27,18 @@ export default function PayrollIndex({
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const [openGenerate, setOpenGenerate] = useState(false);
+    const [regenerateRecord, setRegenerateRecord] = useState<any>(null);
+    const [isRegenDialogOpen, setIsRegenDialogOpen] = useState(false);
 
     const [openAdjustment, setOpenAdjustment] = useState(false);
     const [selectedAdjustment, setSelectedAdjustment] = useState<any[]>([]);
 
     const { delete: destroy, processing } = useForm();
+
+    const handleRegenerate = (record: any) => {
+        setRegenerateRecord(record);
+        setIsRegenDialogOpen(true);
+    };
 
     const handleDetail = async (row: any) => {
         setLoadingDetail(true);
@@ -86,6 +93,21 @@ export default function PayrollIndex({
                 },
             });
         }
+    };
+
+    const confirmRegenerate = () => {
+        if (!regenerateRecord) return;
+
+        const userId = regenerateRecord.user_id || regenerateRecord.user?.id;
+
+        router.post(`/payroll/generate/${userId}`, {
+            periode: regenerateRecord.periode
+        }, {
+            onFinish: () => {
+                setIsRegenDialogOpen(false);
+                setRegenerateRecord(null);
+            },
+        });
     };
 
     return (
@@ -167,6 +189,7 @@ export default function PayrollIndex({
                             onDetail: handleDetail,
                             onEditAdjustment: handleEditAdjustment,
                             onDeleteAdjustment: handleDeleteAdjustment,
+                            onRegenerate: handleRegenerate,
                         })}
                         searchKey="user_name"
                         searchPlaceholder="Cari nama pegawai..."
@@ -182,7 +205,6 @@ export default function PayrollIndex({
 
                                 <Button
                                     onClick={() => setOpenGenerate(true)}
-                                    variant="cyan"
                                 >
                                     <Plus className="mr-2 size-4" />
                                     Generate Gaji
@@ -227,6 +249,19 @@ export default function PayrollIndex({
                     onConfirm={confirmDelete}
                     title="Hapus Data Payroll"
                     description="Menghapus data payroll akan menghilangkan catatan gaji periode ini secara permanen."
+                />
+                <ConfirmDialog
+                    isOpen={isRegenDialogOpen}
+                    loading={processing}
+                    onClose={() => {
+                        setIsRegenDialogOpen(false);
+                        setRegenerateRecord(null);
+                    }}
+                    onConfirm={confirmRegenerate}
+                    title="Re-generate Gaji"
+                    description={`Sistem akan menghitung ulang gaji ${regenerateRecord?.user?.name} untuk periode ${regenerateRecord?.periode}. Lanjutkan?`}
+                    confirmText="Ya, Hitung Ulang"
+                    variant="default"
                 />
             </div>
         </>

@@ -26,7 +26,7 @@ const breadcrumbs = [
     { title: 'Users', href: '/users' },
 ];
 
-export default function UsersIndex({ users, stats }: any) {
+export default function UsersIndex({ users, stats, roles }: any) {
     const [createOpen, setCreateOpen] = useState(false);
     const [editRecord, setEditRecord] = useState<any | null>(null);
 
@@ -69,9 +69,7 @@ export default function UsersIndex({ users, stats }: any) {
                         columns={getColumns({
                             onEdit: (r: any) => setEditRecord(r),
                             onDelete: (r: any) => {
-                                if (!confirm('Hapus user ini?')) {
-return;
-}
+                                if (!confirm('Hapus user ini?')) return;
 
                                 fetch(`/users/${r.id}`, {
                                     method: 'DELETE',
@@ -113,6 +111,7 @@ return;
 
                                     <CreateUserForm
                                         onClose={() => setCreateOpen(false)}
+                                        roles={roles}
                                     />
                                 </DialogContent>
                             </Dialog>
@@ -123,6 +122,7 @@ return;
                         isOpen={!!editRecord}
                         onClose={() => setEditRecord(null)}
                         record={editRecord}
+                        roles={roles}
                     />
                 </div>
             </div>

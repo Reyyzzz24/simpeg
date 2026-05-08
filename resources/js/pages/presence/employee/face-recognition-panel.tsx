@@ -1,7 +1,9 @@
 import { router } from '@inertiajs/react';
-import { Camera, RefreshCw, ScanFace, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Camera, RefreshCw, ScanFace, ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { CardContent } from '@/components/ui/card';
+import { DashboardCard } from '@/components/dashboard-card';
 
 type PresenceType = 'masuk' | 'pulang';
 
@@ -18,6 +20,7 @@ export default function FaceRecognitionPanel({
     faceRegisteredAt,
     isTeacherCheckout,
 }: Props) {
+    const [isOpen, setIsOpen] = useState(false);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -58,6 +61,23 @@ export default function FaceRecognitionPanel({
     useEffect(() => {
         return stopCamera;
     }, []);
+
+    const handleOpen = () => {
+        setIsOpen(true);
+    };
+
+    useEffect(() => {
+        if (!isOpen) return;
+        void startCamera();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
+
+    const handleBack = () => {
+        stopCamera();
+        setIsSubmitting(false);
+        setCameraError('');
+        setIsOpen(false);
+    };
 
     const captureFace = () => {
         const video = videoRef.current;
@@ -111,27 +131,79 @@ export default function FaceRecognitionPanel({
         });
     };
 
+    if (!isOpen) {
+        return (
+            <DashboardCard animation="fade-up" delay={0.2}>
+                <CardContent className="p-6">
+                    <div className="flex flex-col items-center gap-6">
+                        <div className="flex w-full items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="rounded-lg bg-blue-100 p-3 text-blue-600">
+                                    <ScanFace className="size-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Face Recognition</p>
+                                    <h4 className="text-sm font-semibold text-slate-900 leading-tight">
+                                        {faceRegistered
+                                            ? "Wajah Terdaftar"
+                                            : "Belum Terdaftar"}
+                                    </h4>
+                                </div>
+                            </div>
+
+                            <Button size="sm" variant="outline" onClick={handleOpen} className="shrink-0">
+                                <RefreshCw className="mr-2 size-3" />
+                                Buka Kamera
+                            </Button>
+                        </div>
+
+                        <div className="relative flex flex-col items-center justify-center py-4">
+                            <div className="relative">
+                                <div className="absolute -inset-4 animate-pulse rounded-full bg-blue-50" />
+                                <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-blue-100 text-blue-600 shadow-inner">
+                                    <ScanFace className="size-12" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="w-full rounded-lg bg-slate-50 p-3 text-center">
+                            <p className="text-xs text-slate-500">
+                                {faceRegistered
+                                    ? `Terverifikasi pada ${faceRegisteredAt || '-'}`
+                                    : "Silakan daftarkan wajah untuk keperluan absensi."}
+                            </p>
+                        </div>
+                    </div>
+                </CardContent>
+            </DashboardCard>
+        );
+    }
+
     return (
-        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
-                <div>
-                    <h2 className="text-lg font-semibold">Face Recognition</h2>
-                    <p className="text-sm text-muted-foreground">
-                        {faceRegistered
-                            ? `Wajah sudah terdaftar${faceRegisteredAt ? ` pada ${faceRegisteredAt}` : ''}.`
-                            : 'Daftarkan wajah terlebih dahulu sebelum absen.'}
-                    </p>
-                </div>
-                <Button variant="outline" onClick={startCamera}>
-                    <RefreshCw className="mr-2 size-4" />
-                    Buka Kamera
+        <div className="fixed inset-0 z-50 flex flex-col bg-black">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
+                <Button variant="outline" className="border-white/20" onClick={handleBack}>
+                    <ArrowLeft className="mr-2 size-4" />
+                    Back
                 </Button>
+
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        className="border-white/20"
+                        onClick={startCamera}
+                        disabled={isSubmitting}
+                    >
+                        <RefreshCw className="mr-2 size-4" />
+                        Restart Kamera
+                    </Button>
+                </div>
             </div>
 
-            <div className="relative bg-black">
+            <div className="relative flex-1 bg-black">
                 <video
                     ref={videoRef}
-                    className="aspect-video w-full object-cover"
+                    className="h-full w-full object-cover"
                     playsInline
                     muted
                 />
@@ -145,14 +217,14 @@ export default function FaceRecognitionPanel({
                     <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
                         <div className="text-center">
                             <Camera className="mx-auto mb-2 size-8" />
-                            Buka kamera untuk mulai
+                            Membuka kamera...
                         </div>
                     </div>
                 )}
             </div>
 
-            <div className="space-y-4 p-4">
-                <p className="text-sm text-muted-foreground">
+            <div className="space-y-4 border-t border-white/10 p-4">
+                <p className="text-sm text-white/80">
                     {cameraError ||
                         (isTeacherCheckout
                             ? 'Untuk guru, absen pulang lewat wajah tetap akan diarahkan ke formulir jam mengajar.'
@@ -169,9 +241,7 @@ export default function FaceRecognitionPanel({
                         {faceRegistered ? 'Daftar Ulang Wajah' : 'Daftar Wajah'}
                     </Button>
                     <Button
-                        disabled={
-                            !isCameraReady || !faceRegistered || isSubmitting
-                        }
+                        disabled={!isCameraReady || !faceRegistered || isSubmitting}
                         onClick={submitPresence}
                     >
                         <ScanFace className="mr-2 size-4" />

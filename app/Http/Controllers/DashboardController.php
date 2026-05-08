@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Absensi;
+use App\Models\Attendance;
 use App\Models\User;
 use App\Models\Announcement;
+use App\Models\Payroll;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -18,7 +19,7 @@ class DashboardController extends Controller
 
     private function presenceQuery($date = null)
     {
-        return Absensi::with('user')
+        return Attendance::with('user')
             ->when($date, fn($q) => $q->whereDate('tanggal', $date));
     }
 
@@ -51,6 +52,56 @@ class DashboardController extends Controller
         })->values();
     }
 
+    private function buildAttendanceTrend(int $days = 7)
+    {
+        $today = Carbon::now()->setTimezone(config('app.timezone'))->startOfDay();
+        $start = $today->copy()->subDays($days - 1);
+        $totalUsers = max(1, User::count());
+
+        return collect(range(0, $days - 1))->map(function (int $offset) use ($start, $totalUsers) {
+            $date = $start->copy()->addDays($offset);
+
+            $records = Attendance::whereDate('tanggal', $date->toDateString())->get();
+            $present = $records->whereNotNull('jam_masuk')->count();
+            $late = $records->filter(function ($p) {
+                return $p->jam_masuk && Carbon::parse($p->jam_masuk)->format('H:i:s') > '08:00:00';
+            })->count();
+
+            return [
+                'date' => $date->toDateString(),
+                'label' => $date->translatedFormat('D'),
+                'present' => $present,
+                'late' => $late,
+                'absent' => max(0, $totalUsers - $present),
+                'present_rate' => (int) round(($present / $totalUsers) * 100),
+            ];
+        })->values();
+    }
+
+    private function buildQuickAccess(?User $authUser)
+    {
+        $latestPayroll = $authUser
+            ? Payroll::where('user_id', $authUser->id)->latest('periode')->first()
+            : null;
+
+        $todayAttendance = $authUser
+            ? Attendance::where('user_id', $authUser->id)
+                ->whereDate('tanggal', $this->today())
+                ->first()
+            : null;
+
+        return [
+            'salary_slip' => [
+                'available' => (bool) $latestPayroll,
+                'period' => $latestPayroll?->periode,
+            ],
+            'work_report' => [
+                'submitted_today' => (bool) $todayAttendance?->jam_pulang,
+                'attendance_status' => $todayAttendance?->status_disiplin,
+            ],
+        ];
+    }
+
     public function index()
     {
         $today = $this->today();
@@ -61,12 +112,16 @@ class DashboardController extends Controller
 
         $stats = $this->buildStats($presences, $totalUsers);
         $recent = $this->buildRecent($presences);
+        $trend = $this->buildAttendanceTrend();
+        $quickAccess = $this->buildQuickAccess(auth()->user());
 
         $announcements = Announcement::latest()->take(5)->get();
 
         return Inertia::render('dashboard', [
             'stats' => $stats,
             'recent' => $recent,
+            'trend' => $trend,
+            'quickAccess' => $quickAccess,
             'announcements' => $announcements,
         ]);
     }
@@ -82,6 +137,8 @@ class DashboardController extends Controller
         return response()->json([
             'stats' => $this->buildStats($presences, $totalUsers),
             'recent' => $this->buildRecent($presences),
+            'trend' => $this->buildAttendanceTrend(),
+            'quickAccess' => $this->buildQuickAccess(auth()->user()),
         ]);
     }
 
@@ -92,7 +149,7 @@ class DashboardController extends Controller
         $start = Carbon::now()->startOfMonth();
         $end = Carbon::now()->endOfMonth();
 
-        $query = Absensi::whereBetween('tanggal', [$start, $end]);
+        $query = Attendance::whereBetween('tanggal', [$start, $end]);
 
         if ($userId) {
             $query->where('user_id', $userId);

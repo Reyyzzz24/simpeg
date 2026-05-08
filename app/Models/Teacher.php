@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Guru extends Model
+class Teacher extends Model
 {
-    protected $table = 'guru';
+    protected $table = 'teachers';
     protected $guarded = [];
     public const STATUS_KERJA_OPTIONS = ['tetap', 'ptt'];
 
@@ -14,6 +14,7 @@ class Guru extends Model
     {
         return $this->belongsTo(User::class);
     }
+
     public function position()
     {
         return $this->belongsTo(Position::class);

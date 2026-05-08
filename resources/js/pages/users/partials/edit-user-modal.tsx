@@ -18,13 +18,14 @@ type Props = {
     isOpen: boolean;
     onClose: () => void;
     record: any | null;
+    roles: Array<{ id?: number; name: string }>;
 };
 
-export default function EditUserModal({ isOpen, onClose, record }: Props) {
+export default function EditUserModal({ isOpen, onClose, record, roles }: Props) {
     const { data, setData, put, processing, errors, reset } = useForm({
         name: '',
         email: '',
-        role: 'user',
+        role: roles?.[0]?.name ?? 'user',
         password: '',
         password_confirmation: '',
     });
@@ -99,10 +100,11 @@ export default function EditUserModal({ isOpen, onClose, record }: Props) {
                             </SelectTrigger>
 
                             <SelectContent>
-                                <SelectItem value="pegawai">Pegawai</SelectItem>
-                                <SelectItem value="guru">Guru</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="superadmin">Super Admin</SelectItem>
+                                {(roles ?? []).map((r) => (
+                                    <SelectItem key={r.name} value={r.name}>
+                                        {r.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
 

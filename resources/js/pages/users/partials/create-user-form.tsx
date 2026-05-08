@@ -13,11 +13,17 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-export default function CreateUserForm({ onClose }: { onClose: () => void }) {
+export default function CreateUserForm({
+    onClose,
+    roles,
+}: {
+    onClose: () => void;
+    roles: Array<{ id?: number; name: string }>;
+}) {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
-        role: 'user',
+        role: roles?.[0]?.name ?? 'user',
         password: '',
         password_confirmation: '',
     });
@@ -66,10 +72,11 @@ export default function CreateUserForm({ onClose }: { onClose: () => void }) {
                     </SelectTrigger>
 
                     <SelectContent>
-                        <SelectItem value="pegawai">Pegawai</SelectItem>
-                        <SelectItem value="guru">Guru</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="superadmin">Super Admin</SelectItem>
+                        {(roles ?? []).map((r) => (
+                            <SelectItem key={r.name} value={r.name}>
+                                {r.name}
+                            </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Pegawai;
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +14,7 @@ class EmployeeController extends Controller
     public function index(Request $request)
     {
         // Ambil semua pegawai beserta relasi user dan position
-        $employees = Pegawai::with(['user', 'position'])
+        $employees = Employee::with(['user', 'position'])
             ->orderBy('nama', 'asc')
             ->get()
             ->map(function ($item) {
@@ -38,13 +38,13 @@ class EmployeeController extends Controller
         ]);
     }
 
-    public function update(Request $request, Pegawai $employee)
+    public function update(Request $request, Employee $employee)
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'nip' => 'nullable|string|unique:pegawai,nip,' . $employee->id,
+            'nip' => 'nullable|string|unique:employees,nip,' . $employee->id,
             'sub_role' => 'required|string',
-            'status_kerja' => ['required', Rule::in(Pegawai::STATUS_KERJA_OPTIONS)],
+            'status_kerja' => ['required', Rule::in(Employee::STATUS_KERJA_OPTIONS)],
             'position_id' => 'nullable|exists:positions,id', // Validasi position_id
             'gaji_pokok' => 'nullable|numeric',
             'transport_harian' => 'nullable|numeric',
@@ -69,7 +69,7 @@ class EmployeeController extends Controller
         return back()->with('success', 'Employee berhasil diperbarui');
     }
 
-    public function destroy(Pegawai $employee)
+    public function destroy(Employee $employee)
     {
         if ($employee->user) {
             $employee->user->delete();

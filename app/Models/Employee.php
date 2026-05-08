@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Pegawai extends Model
+class Employee extends Model
 {
-    protected $table = 'pegawai';
+    protected $table = 'employees';
     protected $guarded = [];
     public const STATUS_KERJA_OPTIONS = ['tetap', 'ptt'];
 
@@ -15,10 +15,11 @@ class Pegawai extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function lembur()
+    public function overtimes()
     {
-        return $this->hasMany(Lembur::class);
+        return $this->hasMany(Overtime::class, 'pegawai_id');
     }
+
     public function position()
     {
         return $this->belongsTo(Position::class, 'position_id');

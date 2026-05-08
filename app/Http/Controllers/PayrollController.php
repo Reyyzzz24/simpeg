@@ -33,6 +33,7 @@ class PayrollController extends Controller
             return [
                 'id' => $item->id,
                 'user' => ['name' => $item->user->name ?? '-'],
+                'user_id' => $item->user_id,
                 'periode' => $item->periode,
                 'total_gaji' => $item->total_gaji,
 
@@ -68,10 +69,13 @@ class PayrollController extends Controller
         ]);
     }
 
-    public function generate(User $user, string $periode)
+    public function generate(User $user, Request $request)
     {
-        $payroll = $this->service->generate($user, $periode);
-        return response()->json($payroll);
+        $periode = $request->input('periode');
+
+        $this->service->generate($user, $periode);
+
+        return back()->with('success', "Payroll {$user->name} berhasil diperbarui.");
     }
 
     // Update fungsi generateAll di PayrollController.php

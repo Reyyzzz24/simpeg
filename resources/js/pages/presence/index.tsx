@@ -119,117 +119,86 @@ export default function PresenceIndex({
                     </div>
                 </PageHeader>
 
-                {/* STATISTIK */}
-                <div className="grid gap-6 md:grid-cols-3">
-                    <DashboardCard>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-lg bg-green-100 p-3 text-green-600">
-                                <Users />
+                <div className="grid gap-6 lg:grid-cols-12">
+
+                    {/* Status Waktu (Kiri) */}
+                    <DashboardCard className="lg:col-span-4">
+                        <CardContent className="p-6">
+                            <div className="mb-6 flex items-center justify-between">
+                                <h3 className="font-bold text-gray-700">Status Waktu</h3>
+                                <Button
+                                    variant="neutral"
+                                    size="sm"
+                                    className="bg-black text-white hover:bg-gray-800 rounded-full px-4"
+                                    onClick={() => setIsSetTimeOpen(true)}
+                                >
+                                    <Clock className="mr-2 size-3" />
+                                    Atur Waktu
+                                </Button>
                             </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">
-                                    Total Hadir
-                                </p>
-                                <h3 className="text-2xl font-bold">
-                                    {stats.total_present}
-                                </h3>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between border-b pb-2">
+                                    <span className="font-medium text-gray-600">Masuk</span>
+                                    <span className="font-mono text-gray-500">
+                                        {timeWindow?.masuk_start ?? '06:00'} - {timeWindow?.masuk_end ?? '08:00'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="font-medium text-gray-600">Pulang</span>
+                                    <span className="font-mono text-gray-500">
+                                        {timeWindow?.pulang_start ?? '16:00'} - {timeWindow?.pulang_end ?? '18:00'}
+                                    </span>
+                                </div>
                             </div>
                         </CardContent>
                     </DashboardCard>
 
-                    <DashboardCard>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-lg bg-orange-100 p-3 text-orange-600">
-                                <AlertTriangle />
+                    {/* Statistik Kehadiran (Kanan) */}
+                    <DashboardCard className="lg:col-span-8">
+                        <CardContent className="grid grid-cols-2 p-0 md:grid-cols-4 divide-x divide-gray-100">
+                            {/* Total Siswa/Pegawai */}
+                            <div className="flex flex-col gap-1 p-6">
+                                <p className="text-sm font-medium text-gray-500">Total Pegawai</p>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-3xl font-bold text-gray-900">{stats.total_employees ?? 0}</h3>
+                                    <Users className="size-5 text-gray-400" />
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">
-                                    Terlambat
-                                </p>
-                                <h3 className="text-2xl font-bold">
-                                    {stats.total_late}
-                                </h3>
-                            </div>
-                        </CardContent>
-                    </DashboardCard>
 
-                    <DashboardCard>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-lg bg-blue-100 p-3 text-blue-600">
-                                <Clock />
+                            {/* Hadir */}
+                            <div className="flex flex-col gap-1 bg-green-50/30 p-6">
+                                <p className="text-sm font-medium text-green-600">Hadir</p>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-3xl font-bold text-green-600">{stats.total_present}</h3>
+                                    <div className="flex size-5 items-center justify-center rounded-full border border-green-600">
+                                        <span className="text-[10px] text-green-600">✓</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">
-                                    Belum Absen
-                                </p>
-                                <h3 className="text-2xl font-bold">
-                                    {stats.total_missing}
-                                </h3>
+
+                            {/* Izin/Sakit (Late as placeholder) */}
+                            <div className="flex flex-col gap-1 p-6">
+                                <p className="text-sm font-medium text-gray-500">Terlambat</p>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-3xl font-bold text-gray-900">{stats.total_late}</h3>
+                                    <AlertTriangle className="size-5 text-orange-400" />
+                                </div>
+                            </div>
+
+                            {/* Alpha / Belum Absen */}
+                            <div className="flex flex-col gap-1 p-6">
+                                <p className="text-sm font-medium text-red-500">Alpha</p>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-3xl font-bold text-red-600">{stats.total_missing}</h3>
+                                    <div className="flex size-5 items-center justify-center rounded-full border border-red-600 text-red-600">
+                                        <span className="text-[10px]">✕</span>
+                                    </div>
+                                </div>
                             </div>
                         </CardContent>
                     </DashboardCard>
                 </div>
-
-                <DashboardCard>
-                    <CardContent className="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="flex items-start gap-4">
-                            <div className="rounded-lg bg-cyan-100 p-3 text-cyan-600">
-                                <Settings />
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">
-                                    Pengaturan Waktu Presensi
-                                </p>
-                                <h2 className="text-xl font-semibold">
-                                    Jadwal scan masuk dan pulang
-                                </h2>
-                                <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                                    <div className="rounded-md border bg-background px-3 py-2">
-                                        <p className="text-xs text-muted-foreground">
-                                            Mulai Masuk
-                                        </p>
-                                        <p className="font-semibold">
-                                            {timeWindow?.masuk_start ?? '06:00'}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-md border bg-background px-3 py-2">
-                                        <p className="text-xs text-muted-foreground">
-                                            Batas Masuk
-                                        </p>
-                                        <p className="font-semibold">
-                                            {timeWindow?.masuk_end ?? '08:00'}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-md border bg-background px-3 py-2">
-                                        <p className="text-xs text-muted-foreground">
-                                            Mulai Pulang
-                                        </p>
-                                        <p className="font-semibold">
-                                            {timeWindow?.pulang_start ??
-                                                '16:00'}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-md border bg-background px-3 py-2">
-                                        <p className="text-xs text-muted-foreground">
-                                            Selesai Pulang
-                                        </p>
-                                        <p className="font-semibold">
-                                            {timeWindow?.pulang_end ?? '18:00'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsSetTimeOpen(true)}
-                        >
-                            <Settings className="mr-2 size-4" />
-                            Atur Waktu
-                        </Button>
-                    </CardContent>
-                </DashboardCard>
 
                 {/* TABLE */}
                 <DashboardCard className="p-6">

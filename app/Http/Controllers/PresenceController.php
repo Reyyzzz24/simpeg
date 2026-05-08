@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Absensi;
+use App\Models\Attendance;
 use App\Models\TimeSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -20,7 +20,7 @@ class PresenceController extends Controller
         $mode = $request->input('mode', 'today');
         $date = $request->input('date', Carbon::today()->toDateString());
 
-        $query = Absensi::with('user');
+        $query = Attendance::with('user');
 
         if ($mode === 'today') {
             $query->whereDate('tanggal', Carbon::today()->toDateString());
@@ -89,7 +89,7 @@ class PresenceController extends Controller
     {
         $user = Auth::user();
         $today = now()->setTimezone(config('app.timezone'))->toDateString();
-        $presence = Absensi::where('user_id', $user->id)
+        $presence = Attendance::where('user_id', $user->id)
             ->whereDate('tanggal', $today)
             ->first();
 
@@ -112,11 +112,11 @@ class PresenceController extends Controller
     public function selfHistory()
     {
         $user = Auth::user();
-        $presences = Absensi::where('user_id', $user->id)
+        $presences = Attendance::where('user_id', $user->id)
             ->orderByDesc('tanggal')
             ->limit(60)
             ->get()
-            ->map(fn(Absensi $presence) => $this->formatSelfPresenceRecord($presence));
+            ->map(fn(Attendance $presence) => $this->formatSelfPresenceRecord($presence));
 
         return Inertia::render('presence/employee/index', [
             'historyMode' => true,
@@ -151,7 +151,7 @@ class PresenceController extends Controller
             )
         );
 
-        Absensi::updateOrCreate(
+        Attendance::updateOrCreate(
             [
                 'user_id' => $validated['user_id'],
                 'tanggal' => $validated['tanggal'],
@@ -162,7 +162,7 @@ class PresenceController extends Controller
         return redirect()->back()->with('success', 'Data presensi berhasil diperbarui.');
     }
 
-    public function update(Request $request, Absensi $presence)
+    public function update(Request $request, Attendance $presence)
     {
         $validated = $request->validate([
             'tanggal' => 'required|date',
@@ -287,12 +287,20 @@ class PresenceController extends Controller
             'face_image' => ['required', 'string'],
         ]);
 
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
         $hash = $this->makeFaceHash($validated['face_image']);
+
         if (!$hash) {
             return back()->with('error', 'Foto wajah tidak bisa diproses. Pastikan wajah terlihat jelas dan cahaya cukup.');
         }
 
-        Auth::user()->update([
+        $user->update([
             'face_hash' => $hash,
             'face_registered_at' => now()->setTimezone(config('app.timezone')),
         ]);
@@ -310,7 +318,7 @@ class PresenceController extends Controller
         }
 
         $now = now()->setTimezone(config('app.timezone'));
-        $presence = Absensi::firstOrCreate([
+        $presence = Attendance::firstOrCreate([
             'user_id' => $user->id,
             'tanggal' => $now->toDateString(),
         ]);
@@ -359,7 +367,7 @@ class PresenceController extends Controller
         ]);
 
         $now = now()->setTimezone(config('app.timezone'));
-        $presence = Absensi::where('user_id', $user->id)
+        $presence = Attendance::where('user_id', $user->id)
             ->whereDate('tanggal', $now->toDateString())
             ->first();
 
@@ -393,7 +401,7 @@ class PresenceController extends Controller
         $user = Auth::user();
         $now = now()->setTimezone(config('app.timezone'));
 
-        $presence = Absensi::firstOrCreate([
+        $presence = Attendance::firstOrCreate([
             'user_id' => $user->id,
             'tanggal' => $now->toDateString(),
         ]);
@@ -489,7 +497,7 @@ class PresenceController extends Controller
     private function formatTodayPresence(User $user): array
     {
         $today = now()->setTimezone(config('app.timezone'))->toDateString();
-        $presence = Absensi::where('user_id', $user->id)
+        $presence = Attendance::where('user_id', $user->id)
             ->whereDate('tanggal', $today)
             ->first();
 
@@ -584,7 +592,7 @@ class PresenceController extends Controller
         return $distance;
     }
 
-    private function formatSelfPresenceRecord(Absensi $presence): array
+    private function formatSelfPresenceRecord(Attendance $presence): array
     {
         return [
             'id' => $presence->id,
@@ -613,7 +621,7 @@ class PresenceController extends Controller
         // Jika bulan kosong, default ke bulan sekarang
         $month = $month ?: date('Y-m');
 
-        $history = Absensi::where('user_id', $userId)
+        $history = Attendance::where('user_id', $userId)
             ->where('tanggal', 'like', $month . '%')
             ->orderBy('tanggal', 'asc')
             ->get();

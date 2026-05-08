@@ -1,11 +1,12 @@
 import type { ColumnDef, Row } from '@tanstack/react-table';
-import { MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, Trash2, Settings2, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -95,6 +96,7 @@ export function getPayrollColumns(opts?: {
     onDetail?: (r: any) => void;
     onEditAdjustment?: (adjustments: any[]) => void;
     onDeleteAdjustment?: (adjustments: any[]) => void;
+    onRegenerate?: (record: any) => void;
 }) {
     return [
         ...baseColumns,
@@ -109,16 +111,23 @@ export function getPayrollColumns(opts?: {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Buka menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end" className="w-52">
-                            <DropdownMenuItem
-                                onClick={() => opts?.onDetail?.(record)}
-                            >
+                            <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem onClick={() => opts?.onDetail?.(record)}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 Detail
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem onClick={() => opts?.onRegenerate?.(record)}>
+                                <Settings2 className="mr-2 h-4 w-4" />
+                                Re-generate Gaji
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
@@ -126,29 +135,22 @@ export function getPayrollColumns(opts?: {
                             {adjustments.length > 0 ? (
                                 <>
                                     <DropdownMenuItem
-                                        onClick={() =>
-                                            opts?.onEditAdjustment?.(
-                                                adjustments,
-                                            )
-                                        }
+                                        onClick={() => opts?.onEditAdjustment?.(adjustments)}
                                     >
-                                        <Pencil className="mr-2 h-4 w-4" />
+                                        <Edit className="mr-2 h-4 w-4" />
                                         Edit Adjustment
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
-                                        onClick={() =>
-                                            opts?.onDeleteAdjustment?.(
-                                                adjustments,
-                                            )
-                                        }
+                                        onClick={() => opts?.onDeleteAdjustment?.(adjustments)}
+                                        className="text-red-600 focus:text-red-600"
                                     >
                                         <Trash2 className="mr-2 h-4 w-4" />
                                         Hapus Adjustment
                                     </DropdownMenuItem>
                                 </>
                             ) : (
-                                <DropdownMenuItem disabled>
+                                <DropdownMenuItem disabled className="text-muted-foreground">
                                     Tidak ada adjustment
                                 </DropdownMenuItem>
                             )}

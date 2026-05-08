@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Lembur extends Model
+class Overtime extends Model
 {
-    protected $table = 'lembur';
+    protected $table = 'overtimes';
 
     protected $fillable = [
         'pegawai_id',
@@ -25,8 +25,8 @@ class Lembur extends Model
         ];
     }
 
-    public function pegawai()
+    public function employee()
     {
-        return $this->belongsTo(Pegawai::class);
+        return $this->belongsTo(Employee::class, 'pegawai_id');
     }
 }

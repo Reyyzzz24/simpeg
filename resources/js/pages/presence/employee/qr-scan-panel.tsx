@@ -1,7 +1,9 @@
 import { router } from '@inertiajs/react';
-import { Camera, QrCode, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Camera, QrCode, RefreshCw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { DashboardCard } from '@/components/dashboard-card';
+import { CardContent } from '@/components/ui/card';
 
 export default function QrScanPanel() {
     const [isActive, setIsActive] = useState(false);
@@ -51,13 +53,13 @@ export default function QrScanPanel() {
 
         if (token) {
             stopCamera();
+            setIsActive(false);
             router.visit(`/presence/scan/${token}`);
         }
     };
 
     const startCamera = async () => {
         stopCamera();
-        setIsActive(true);
         setCameraError('');
         setDetectedQr('');
 
@@ -97,62 +99,138 @@ export default function QrScanPanel() {
         return stopCamera;
     }, []);
 
+    const handleBack = () => {
+        stopCamera();
+        setIsActive(false);
+        setCameraError('');
+        setDetectedQr('');
+    };
+
+    useEffect(() => {
+        if (!isActive) return;
+        void startCamera();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isActive]);
+
     return (
-        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
-                <div>
-                    <h2 className="text-lg font-semibold">Scan QR</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Arahkan kamera ke QR gate presensi.
-                    </p>
-                </div>
-                <Button variant="outline" onClick={startCamera}>
-                    <QrCode className="mr-2 size-4" />
-                    Scan QR
-                </Button>
-            </div>
+        <>
+            {!isActive ? (
+                <DashboardCard animation="fade-up" delay={0.3}>
+                    <CardContent className="p-6">
+                        <div className="flex flex-col items-center gap-6">
+                            {/* Header Area */}
+                            <div className="flex w-full items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="rounded-lg bg-emerald-100 p-3 text-emerald-600">
+                                        <QrCode className="size-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-500">Presensi QR</p>
+                                        <h4 className="text-sm font-semibold text-slate-900 leading-tight">
+                                            Scan Gate QR
+                                        </h4>
+                                    </div>
+                                </div>
 
-            <div className="relative bg-black">
-                <video
-                    ref={videoRef}
-                    className="aspect-video w-full object-cover"
-                    playsInline
-                    muted
-                />
-                <canvas ref={canvasRef} className="hidden" />
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setIsActive(true)}
+                                    className="shrink-0 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600"
+                                >
+                                    <QrCode className="mr-2 size-3" />
+                                    Buka Scan
+                                </Button>
+                            </div>
 
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    {isActive ? (
-                        <div className="size-64 rounded-3xl border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
-                    ) : (
-                        <div className="rounded-xl bg-black/70 px-6 py-4 text-center text-white">
-                            <Camera className="mx-auto mb-2 size-8" />
-                            Buka kamera QR terlebih dahulu
+                            {/* Visual Center Logo (QR Icon) */}
+                            <div className="relative flex flex-col items-center justify-center py-4">
+                                <div className="relative">
+                                    {/* Efek Ring Luar Hijau */}
+                                    <div className="absolute -inset-4 animate-pulse rounded-full bg-emerald-50" />
+                                    <div className="relative flex h-24 w-24 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 shadow-inner">
+                                        <QrCode className="size-12" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Information Footer */}
+                            <div className="w-full rounded-lg bg-slate-50 p-3 text-center">
+                                <p className="text-xs text-slate-500">
+                                    Arahkan kamera ke QR gate presensi untuk mencatat kehadiran secara otomatis.
+                                </p>
+                            </div>
                         </div>
-                    )}
-                </div>
+                    </CardContent>
+                </DashboardCard>
+            ) : (
+                <div className="fixed inset-0 z-50 flex flex-col bg-black">
+                    <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
+                        <Button
+                            variant="outline"
+                            className="border-white/20"
+                            onClick={handleBack}
+                        >
+                            <ArrowLeft className="mr-2 size-4" />
+                            Back
+                        </Button>
 
-                {isActive && !isCameraReady && !cameraError && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
-                        Membuka kamera...
+                        <Button
+                            variant="outline"
+                            className="border-white/20"
+                            onClick={startCamera}
+                        >
+                            <RefreshCw className="mr-2 size-4" />
+                            Restart Kamera
+                        </Button>
                     </div>
-                )}
-            </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div className="text-sm text-muted-foreground">
-                    {cameraError ||
-                        (detectedQr
-                            ? 'QR terdeteksi, memproses...'
-                            : isActive
-                              ? 'Kamera akan membaca QR secara otomatis.'
-                              : 'Belum memulai scan QR.')}
+                    <div className="relative flex-1 bg-black">
+                        <video
+                            ref={videoRef}
+                            className="h-full w-full object-cover"
+                            playsInline
+                            muted
+                        />
+                        <canvas ref={canvasRef} className="hidden" />
+
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                            <div className="size-64 rounded-3xl border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                        </div>
+
+                        {!isCameraReady && !cameraError && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
+                                <div className="text-center">
+                                    <Camera className="mx-auto mb-2 size-8" />
+                                    Membuka kamera...
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="border-t border-white/10 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="text-sm text-white/80">
+                                {cameraError ||
+                                    (detectedQr
+                                        ? 'QR terdeteksi, memproses...'
+                                        : isCameraReady
+                                            ? 'Kamera membaca QR secara otomatis.'
+                                            : 'Menunggu kamera siap...')}
+                            </div>
+
+                            <Button
+                                variant="outline"
+                                className="border-white/20"
+                                onClick={startCamera}
+                            >
+                                <RefreshCw className="mr-2 size-4" />
+                                Buka Ulang
+                            </Button>
+                        </div>
+                    </div>
                 </div>
-                <Button variant="outline" onClick={startCamera}>
-                    <RefreshCw className="mr-2 size-4" />
-                    Buka Ulang Kamera
-                </Button>
-            </div>
-        </div>
+            )}
+        </>
     );
 }
