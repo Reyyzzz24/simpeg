@@ -1,40 +1,39 @@
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useForm } from '@inertiajs/react';
 
-export default function DeleteConfirmDialog({
-    isOpen,
-    onClose,
-    onConfirm,
-    title = "Hapus Data",
-    description = "Apakah kamu yakin ingin menghapus data ini?"
-}: any) {
+export default function DeleteTeacherModal({ isOpen, onClose, record }: any) {
+    const { delete: destroy, processing } = useForm();
+
+    if (!record) return null;
+
+    const handleDelete = () => {
+        destroy(`/teacher/${record.id}`, {
+            preserveScroll: true,
+            onSuccess: onClose,
+        });
+    };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{title}</DialogTitle>
+                    <DialogTitle>Hapus Guru</DialogTitle>
                 </DialogHeader>
 
                 <p className="text-sm text-muted-foreground">
-                    {description}
+                    Yakin ingin menghapus {record.nama}? Akun pengguna yang terhubung juga akan ikut terhapus.
                 </p>
 
                 <DialogFooter>
-                    <Button variant="secondary" onClick={onClose}>
+                    <Button variant="secondary" onClick={onClose} disabled={processing}>
                         Batal
                     </Button>
-                    <Button variant="destructive" onClick={onConfirm}>
+                    <Button variant="destructive" onClick={handleDelete} disabled={processing}>
                         Hapus
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

@@ -58,17 +58,17 @@ class UserPermissionController extends Controller
         return back();
     }
 
-    public function update(Request $request, UserPermission $userPermission)
+    public function update(Request $request)
     {
         $request->validate([
+            'old_user_id' => 'required',
+            'old_permission_id' => 'required',
             'user_id' => 'required|exists:users,id',
             'permission_id' => 'required|exists:permissions,id',
         ]);
 
-        // Check if this user permission already exists (excluding current record)
         $exists = UserPermission::where('user_id', $request->user_id)
             ->where('permission_id', $request->permission_id)
-            ->where('id', '!=', $userPermission->id)
             ->exists();
 
         if ($exists) {
@@ -77,17 +77,22 @@ class UserPermissionController extends Controller
             ]);
         }
 
-        $userPermission->update([
-            'user_id' => $request->user_id,
-            'permission_id' => $request->permission_id,
-        ]);
+        UserPermission::where('user_id', $request->old_user_id)
+            ->where('permission_id', $request->old_permission_id)
+            ->update([
+                'user_id' => $request->user_id,
+                'permission_id' => $request->permission_id,
+            ]);
 
         return back();
     }
 
-    public function destroy(UserPermission $userPermission)
+    public function destroy(Request $request)
     {
-        $userPermission->delete();
+        UserPermission::where('user_id', $request->user_id)
+            ->where('permission_id', $request->permission_id)
+            ->delete();
+
         return back();
     }
 }

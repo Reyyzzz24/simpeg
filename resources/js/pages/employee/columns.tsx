@@ -1,5 +1,5 @@
-import { ColumnDef } from '@tanstack/react-table'
-import * as React from 'react'
+import { ColumnDef } from '@tanstack/react-table';
+import { Edit, Eye, MoreHorizontal, Trash2 } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -7,75 +7,65 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
-import { Edit, Eye, MoreHorizontal, Trash2 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-
-// Helper untuk format mata uang Rupiah
-const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(value || 0)
-}
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 export const columns: ColumnDef<any>[] = [
     {
         accessorKey: 'nama',
-        header: 'Nama'
+        header: 'Nama Guru',
+    },
+    {
+        accessorKey: 'tempat_tanggal_lahir',
+        header: 'Tempat Tanggal Lahir',
+        cell: ({ row }) => row.original.tempat_tanggal_lahir || '-',
+    },
+    {
+        accessorKey: 'jenis_kelamin',
+        header: 'L/P',
+        cell: ({ row }) => row.original.jenis_kelamin || '-',
+    },
+    {
+        accessorKey: 'tingkat_pendidikan',
+        header: 'Tingkat Pendidikan',
+        cell: ({ row }) => row.original.tingkat_pendidikan || '-',
+    },
+    {
+        accessorKey: 'tahun_lulus',
+        header: 'Tahun Lulus',
+        cell: ({ row }) => row.original.tahun_lulus || '-',
+    },
+    {
+        accessorKey: 'tahun_masuk_kerja',
+        header: 'Tahun Masuk Kerja',
+        cell: ({ row }) => row.original.tahun_masuk_kerja || '-',
     },
     {
         accessorKey: 'nip',
         header: 'NIP',
-        cell: ({ row }) => row.original.nip || '-'
+        cell: ({ row }) => row.original.nip || '-',
     },
     {
         accessorKey: 'sub_role',
         header: 'Sub Role',
-        cell: ({ row }) => (
-            <Badge variant="secondary" className="uppercase">
-                {row.original.sub_role}
-            </Badge>
-        )
+        cell: ({ row }) => row.original.sub_role || '-',
     },
     {
         accessorKey: 'status_kerja',
-        header: 'Status',
-        cell: ({ row }) => (
-            <Badge variant="outline" className="capitalize">
-                {row.original.status_kerja}
-            </Badge>
-        )
+        header: 'Status Kerja',
+        cell: ({ row }) => row.original.status_kerja || '-',
     },
     {
         accessorKey: 'jabatan',
         header: 'Jabatan',
-        // Mengambil nama jabatan dari hasil map di Controller[cite: 8]
-        cell: ({ row }) => row.original.jabatan || '-'
+        cell: ({ row }) => row.original.jabatan || '-',
     },
-    {
-        accessorKey: 'gaji_pokok',
-        header: 'Gaji Pokok',
-        cell: ({ row }) => formatCurrency(row.original.gaji_pokok),
-    },
-    {
-        accessorKey: 'transport_harian',
-        header: 'Transport',
-        cell: ({ row }) => formatCurrency(row.original.transport_harian),
-    },
-    {
-        accessorKey: 'tunjangan_jabatan',
-        header: 'Tunj. Jabatan',
-        cell: ({ row }) => formatCurrency(row.original.tunjangan_jabatan),
-    },
-]
+];
 
 export function getColumns(opts?: {
-    onEdit?: (r: any) => void
-    onView?: (r: any) => void
-    onDelete?: (r: any) => void
+    onEdit?: (r: any) => void;
+    onView?: (r: any) => void;
+    onDelete?: (r: any) => void;
 }) {
     const actionCol: ColumnDef<any> = {
         id: 'actions',
@@ -113,7 +103,7 @@ export function getColumns(opts?: {
                 </DropdownMenuContent>
             </DropdownMenu>
         ),
-    }
+    };
 
-    return [...columns, actionCol]
+    return [...columns, actionCol];
 }

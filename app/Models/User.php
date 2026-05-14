@@ -15,6 +15,7 @@ use App\Models\Role;
 use App\Models\Permission;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 
 class User extends Authenticatable
 {
@@ -43,6 +44,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'face_hash' => 'array',
             'face_registered_at' => 'datetime',
         ];
     }
@@ -101,5 +103,21 @@ class User extends Authenticatable
                $this->roles()->whereHas('permissions', function ($query) use ($permission) {
                    $query->where('id', $permission);
                })->exists();
+    }
+
+    public function getAllPermissions(): Collection
+    {
+        $directPermissions = $this->permissions()->get();
+
+        $rolePermissions = $this->roles()
+            ->with('permissions')
+            ->get()
+            ->pluck('permissions')
+            ->flatten();
+
+        return $directPermissions
+            ->merge($rolePermissions)
+            ->unique('id')
+            ->values();
     }
 }

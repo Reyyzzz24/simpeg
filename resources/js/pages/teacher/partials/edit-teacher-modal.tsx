@@ -27,15 +27,16 @@ export default function EditTeacherModal({
 }: any) {
     const { data, setData, put, processing, errors, reset } = useForm({
         nama: '',
+        tempat_tanggal_lahir: '',
+        jenis_kelamin: '',
         nuptk: '',
         sub_role: '',
         status_kerja: 'tetap',
-        jabatan: '',
         position_id: '',
-        tarif_per_30_menit: 0,
-        transport_harian: 0,
-        tunjangan_jabatan: 0,
-        tunjangan_praktik: 0,
+        tugas_tambahan: '',
+        mata_pelajaran: '',
+        pendidikan_terakhir: '',
+        tmt_sekolah: '',
     });
 
     useEffect(() => {
@@ -45,14 +46,16 @@ return;
 
         setData({
             nama: record.nama || '',
+            tempat_tanggal_lahir: record.tempat_tanggal_lahir || '',
+            jenis_kelamin: record.jenis_kelamin || '',
             nuptk: record.nuptk || '',
             sub_role: record.sub_role || '',
             status_kerja: record.status_kerja || 'tetap',
             position_id: record.position_id ? String(record.position_id) : '',
-            tarif_per_30_menit: record.tarif_per_30_menit || 0,
-            transport_harian: record.transport_harian || 0,
-            tunjangan_jabatan: record.tunjangan_jabatan || 0,
-            tunjangan_praktik: record.tunjangan_praktik || 0,
+            tugas_tambahan: record.tugas_tambahan || '',
+            mata_pelajaran: record.mata_pelajaran || '',
+            pendidikan_terakhir: record.pendidikan_terakhir || '',
+            tmt_sekolah: record.tmt_sekolah || '',
         });
     }, [record]);
 
@@ -90,6 +93,35 @@ return null;
                             onChange={(e) => setData('nama', e.target.value)}
                         />
                         <InputError message={errors.nama} />
+                    </div>
+
+                    <div>
+                        <Label>Tempat Tanggal Lahir</Label>
+                        <Input
+                            value={data.tempat_tanggal_lahir}
+                            onChange={(e) =>
+                                setData('tempat_tanggal_lahir', e.target.value)
+                            }
+                            placeholder="Bandung, 12 Mei 1990"
+                        />
+                        <InputError message={errors.tempat_tanggal_lahir} />
+                    </div>
+
+                    <div>
+                        <Label>L/P</Label>
+                        <Select
+                            value={data.jenis_kelamin}
+                            onValueChange={(v) => setData('jenis_kelamin', v)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih L/P" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="L">L</SelectItem>
+                                <SelectItem value="P">P</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.jenis_kelamin} />
                     </div>
 
                     <div>
@@ -162,19 +194,50 @@ return null;
 
                         <InputError message={errors.position_id} />
                     </div>
+
                     <div>
-                        <Label>Tarif /30 Menit</Label>
+                        <Label>Tugas Tambahan</Label>
                         <Input
-                            type="number"
-                            value={data.tarif_per_30_menit}
+                            value={data.tugas_tambahan}
                             onChange={(e) =>
-                                setData(
-                                    'tarif_per_30_menit',
-                                    Number(e.target.value),
-                                )
+                                setData('tugas_tambahan', e.target.value)
                             }
                         />
-                        <InputError message={errors.tarif_per_30_menit} />
+                        <InputError message={errors.tugas_tambahan} />
+                    </div>
+
+                    <div>
+                        <Label>Mata Pelajaran</Label>
+                        <Input
+                            value={data.mata_pelajaran}
+                            onChange={(e) =>
+                                setData('mata_pelajaran', e.target.value)
+                            }
+                        />
+                        <InputError message={errors.mata_pelajaran} />
+                    </div>
+
+                    <div>
+                        <Label>Pendidikan Terakhir</Label>
+                        <Input
+                            value={data.pendidikan_terakhir}
+                            onChange={(e) =>
+                                setData('pendidikan_terakhir', e.target.value)
+                            }
+                        />
+                        <InputError message={errors.pendidikan_terakhir} />
+                    </div>
+
+                    <div>
+                        <Label>TMT Sekolah</Label>
+                        <Input
+                            type="date"
+                            value={data.tmt_sekolah}
+                            onChange={(e) =>
+                                setData('tmt_sekolah', e.target.value)
+                            }
+                        />
+                        <InputError message={errors.tmt_sekolah} />
                     </div>
 
                     <DialogFooter>

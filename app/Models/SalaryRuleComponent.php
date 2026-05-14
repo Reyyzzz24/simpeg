@@ -14,7 +14,14 @@ class SalaryRuleComponent extends Model
         'salary_rule_id',
         'component_id',
         'amount_type',   // fixed | percentage | formula
+        'formula_type', // hadir | jam_kerja
+        'formula_interval_minutes',
         'amount',
+    ];
+
+    protected $casts = [
+        'formula_interval_minutes' => 'integer',
+        'amount' => 'float',
     ];
 
     /**

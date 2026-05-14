@@ -1,3 +1,5 @@
+import { Link, usePage } from '@inertiajs/react';
+import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -7,11 +9,13 @@ import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
-import type { NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import type { PropsWithChildren } from 'react';
+import type { NavItem, SharedData } from '@/types';
 
-const sidebarNavItems: NavItem[] = [
+type SettingsNavItem = NavItem & {
+    permission?: string;
+};
+
+const sidebarNavItems: SettingsNavItem[] = [
     {
         title: 'Profile',
         href: edit(),
@@ -36,11 +40,17 @@ const sidebarNavItems: NavItem[] = [
         title: 'App Setting',
         href: '/settings/app-setting',
         icon: null,
+        permission: 'app-settings.view',
     },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentUrl } = useCurrentUrl();
+    const { auth } = usePage<SharedData>().props;
+    const visibleSidebarNavItems = sidebarNavItems.filter(
+        (item) =>
+            !item.permission || auth.permissions.includes(item.permission),
+    );
 
     // When server-side rendering, we only render the layout on the client...
     if (typeof window === 'undefined') {
@@ -60,7 +70,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                         className="flex flex-col space-y-1 space-x-0"
                         aria-label="Settings"
                     >
-                        {sidebarNavItems.map((item, index) => (
+                        {visibleSidebarNavItems.map((item, index) => (
                             <Button
                                 key={`${toUrl(item.href)}-${index}`}
                                 size="sm"

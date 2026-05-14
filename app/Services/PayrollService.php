@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Payroll;
 use App\Models\PayrollDetail;
@@ -51,14 +52,23 @@ class PayrollService
                     $year = date('Y', strtotime($periode));
                     $month = date('m', strtotime($periode));
 
-                    $jumlahHadir = Attendance::where('user_id', $user->id)
-                        ->whereYear('tanggal', $year)
-                        ->whereMonth('tanggal', $month)
-                        ->where('status_disiplin', 'hadir') // Menggunakan kolom status_disiplin sesuai DB
-                        ->count();
+                    if (($item->formula_type ?? 'hadir') === 'jam_kerja') {
+                        $intervalMinutes = max((int) ($item->formula_interval_minutes ?? 30), 1);
+                        $totalMinutes = $this->getWorkDurationMinutes($user, $year, $month);
+                        $units = $totalMinutes / $intervalMinutes;
 
-                    $amount = (float) ($item->amount * $jumlahHadir);
-                    $note .= " ({$jumlahHadir} x hadir)";
+                        $amount = (float) ($item->amount * $units);
+                        $note .= " ({$totalMinutes} menit / {$intervalMinutes} menit x Rp" . number_format((float) $item->amount, 0, ',', '.') . ")";
+                    } else {
+                        $jumlahHadir = Attendance::where('user_id', $user->id)
+                            ->whereYear('tanggal', $year)
+                            ->whereMonth('tanggal', $month)
+                            ->whereRaw('LOWER(status_disiplin) = ?', ['hadir'])
+                            ->count();
+
+                        $amount = (float) ($item->amount * $jumlahHadir);
+                        $note .= " ({$jumlahHadir} x hadir)";
+                    }
                 }
 
                 // LOGIKA PERCENTAGE (BERDASARKAN MASTER COMPONENT)
@@ -128,5 +138,31 @@ class PayrollService
             'amount'       => (int) $amount,
             'description'  => $source ? "$name ($source)" : $name,
         ]);
+    }
+
+    private function getWorkDurationMinutes(User $user, string $year, string $month): int
+    {
+        return Attendance::where('user_id', $user->id)
+            ->whereYear('tanggal', $year)
+            ->whereMonth('tanggal', $month)
+            ->get()
+            ->sum(function (Attendance $attendance) {
+                if ($attendance->durasi_hadir_menit !== null) {
+                    return (int) $attendance->durasi_hadir_menit;
+                }
+
+                if (!$attendance->jam_masuk || !$attendance->jam_pulang) {
+                    return 0;
+                }
+
+                $start = Carbon::parse($attendance->tanggal . ' ' . $attendance->jam_masuk);
+                $end = Carbon::parse($attendance->tanggal . ' ' . $attendance->jam_pulang);
+
+                if ($end->lessThan($start)) {
+                    $end->addDay();
+                }
+
+                return (int) $start->diffInMinutes($end);
+            });
     }
 }

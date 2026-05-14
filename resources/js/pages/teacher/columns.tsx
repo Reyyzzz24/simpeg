@@ -19,39 +19,54 @@ export const columns: ColumnDef<any>[] = [
         header: 'Nama',
     },
     {
+        accessorKey: 'tempat_tanggal_lahir',
+        header: 'TTL',
+        cell: ({ row }) => row.original.tempat_tanggal_lahir || '-',
+    },
+    {
+        accessorKey: 'jenis_kelamin',
+        header: 'L/P',
+        cell: ({ row }) => row.original.jenis_kelamin || '-',
+    },
+    {
         accessorKey: 'nuptk',
         header: 'NUPTK',
+        cell: ({ row }) => row.original.nuptk || '-',
     },
     {
         accessorKey: 'sub_role',
         header: 'Sub Role',
-        cell: ({ row }) => {
-            const value = row.original.sub_role;
-
-            return <span className="capitalize">{value}</span>;
-        },
+        cell: ({ row }) => row.original.sub_role || '-',
     },
     {
         accessorKey: 'status_kerja',
         header: 'Status Kerja',
-        cell: ({ row }) => (
-            <span className="capitalize">
-                {row.original.status_kerja === 'ptt' ? 'PTT' : 'Tetap'}
-            </span>
-        ),
+        cell: ({ row }) => row.original.status_kerja || '-',
     },
     {
         accessorKey: 'jabatan',
         header: 'Jabatan',
+        cell: ({ row }) => row.original.jabatan || '-',
     },
     {
-        accessorKey: 'tarif_per_30_menit',
-        header: 'Tarif /30 menit',
-        cell: ({ row }) => {
-            const val = row.original.tarif_per_30_menit;
-
-            return val ? new Intl.NumberFormat('id-ID').format(val) : '0';
-        },
+        accessorKey: 'tugas_tambahan',
+        header: 'Tugas Tambahan',
+        cell: ({ row }) => row.original.tugas_tambahan || '-',
+    },
+    {
+        accessorKey: 'mata_pelajaran',
+        header: 'Mata Pelajaran',
+        cell: ({ row }) => row.original.mata_pelajaran || '-',
+    },
+    {
+        accessorKey: 'pendidikan_terakhir',
+        header: 'Pend. Terakhir',
+        cell: ({ row }) => row.original.pendidikan_terakhir || '-',
+    },
+    {
+        accessorKey: 'tmt_sekolah',
+        header: 'TMT Sekolah',
+        cell: ({ row }) => row.original.tmt_sekolah || '-',
     },
 ];
 

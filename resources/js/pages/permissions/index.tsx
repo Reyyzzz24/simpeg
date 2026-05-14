@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { KeySquare, Plus, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 
@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
+import DeleteConfirmDialog from '@/components/delete-confirm-dialog';
 import {
     Dialog,
     DialogContent,
@@ -28,6 +29,17 @@ const breadcrumbs = [
 export default function PermissionsIndex({ permissions, stats }: any) {
     const [createOpen, setCreateOpen] = useState(false);
     const [editRecord, setEditRecord] = useState<any | null>(null);
+    const [deleteRecord, setDeleteRecord] = useState<any | null>(null);
+    const { delete: destroy, processing } = useForm();
+
+    const confirmDelete = () => {
+        if (!deleteRecord) return;
+
+        destroy(`/permissions/${deleteRecord.id}`, {
+            preserveScroll: true,
+            onSuccess: () => setDeleteRecord(null),
+        });
+    };
 
     return (
         <>
@@ -67,23 +79,7 @@ export default function PermissionsIndex({ permissions, stats }: any) {
                     <DataTable
                         columns={getColumns({
                             onEdit: (r: any) => setEditRecord(r),
-                            onDelete: (r: any) => {
-                                if (!confirm('Hapus permission ini?')) return;
-
-                                fetch(`/permissions/${r.id}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'X-CSRF-TOKEN':
-                                            (
-                                                document.querySelector(
-                                                    'meta[name="csrf-token"]',
-                                                ) as HTMLMetaElement
-                                            )?.content || '',
-                                    },
-                                })
-                                    .then(() => location.reload())
-                                    .catch(() => alert('Gagal menghapus'));
-                            },
+                            onDelete: (r: any) => setDeleteRecord(r),
                         })}
                         data={permissions}
                         searchKey="name"
@@ -121,6 +117,15 @@ export default function PermissionsIndex({ permissions, stats }: any) {
                         onClose={() => setEditRecord(null)}
                         record={editRecord}
                     />
+
+                    <DeleteConfirmDialog
+                        isOpen={!!deleteRecord}
+                        loading={processing}
+                        onClose={() => setDeleteRecord(null)}
+                        onConfirm={confirmDelete}
+                        title="Hapus Permission"
+                        description={`Apakah Anda yakin ingin menghapus permission ${deleteRecord?.name}?`}
+                    />
                 </div>
             </div>
         </>
@@ -130,4 +135,3 @@ export default function PermissionsIndex({ permissions, stats }: any) {
 PermissionsIndex.layout = (page: React.ReactNode) => (
     <AppLayout breadcrumbs={breadcrumbs}>{page}</AppLayout>
 );
-

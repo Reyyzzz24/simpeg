@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Key, Plus, Shield, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 
@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
+import DeleteConfirmDialog from '@/components/delete-confirm-dialog';
 import {
     Dialog,
     DialogContent,
@@ -28,6 +29,31 @@ const breadcrumbs = [
 export default function UserPermissionsIndex({ userPermissions, stats, users, permissions }: any) {
     const [createOpen, setCreateOpen] = useState(false);
     const [editRecord, setEditRecord] = useState<any | null>(null);
+    const [selectedRecord, setSelectedRecord] = useState<any>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [processing, setProcessing] = useState(false);
+
+    const confirmDelete = () => {
+        if (selectedRecord) {
+            setProcessing(true);
+            router.delete('/user-permissions', {
+                data: {
+                    user_id: selectedRecord.user_id,
+                    permission_id: selectedRecord.permission_id,
+                },
+                onSuccess: () => {
+                    setIsDeleteDialogOpen(false);
+                    setSelectedRecord(null);
+                },
+                onFinish: () => setProcessing(false),
+            });
+        }
+    };
+
+    const handleDeleteRequest = (row: any) => {
+        setSelectedRecord(row);
+        setIsDeleteDialogOpen(true);
+    };
 
     return (
         <>
@@ -67,23 +93,7 @@ export default function UserPermissionsIndex({ userPermissions, stats, users, pe
                     <DataTable
                         columns={getColumns({
                             onEdit: (r: any) => setEditRecord(r),
-                            onDelete: (r: any) => {
-                                if (!confirm('Hapus user permission ini?')) return;
-
-                                fetch(`/user-permissions/${r.id}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'X-CSRF-TOKEN':
-                                            (
-                                                document.querySelector(
-                                                    'meta[name="csrf-token"]',
-                                                ) as HTMLMetaElement
-                                            )?.content || '',
-                                    },
-                                })
-                                    .then(() => location.reload())
-                                    .catch(() => alert('Gagal menghapus'));
-                            },
+                            onDelete: handleDeleteRequest,
                         })}
                         data={userPermissions}
                         searchKey="user_name"
@@ -116,6 +126,17 @@ export default function UserPermissionsIndex({ userPermissions, stats, users, pe
                                 </DialogContent>
                             </Dialog>
                         }
+                    />
+                    <DeleteConfirmDialog
+                        isOpen={isDeleteDialogOpen}
+                        loading={processing}
+                        onClose={() => {
+                            setIsDeleteDialogOpen(false);
+                            setSelectedRecord(null);
+                        }}
+                        onConfirm={confirmDelete}
+                        title="Hapus User Permission"
+                        description={`Apakah Anda yakin ingin menghapus permission dari user ${selectedRecord?.user_name}?`}
                     />
 
                     <EditUserPermissionModal

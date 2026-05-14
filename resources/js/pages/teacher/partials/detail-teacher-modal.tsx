@@ -12,14 +12,6 @@ export default function DetailTeacherModal({ isOpen, onClose, record }: any) {
 return null;
 }
 
-    const formatRupiah = (val: number) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(val || 0);
-    };
-
     return (
         <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
             <DialogContent className="sm:max-w-lg">
@@ -34,6 +26,22 @@ return null;
                     <div>
                         <p className="text-muted-foreground">Nama</p>
                         <p className="font-medium">{record.nama}</p>
+                    </div>
+
+                    <div>
+                        <p className="text-muted-foreground">
+                            Tempat Tanggal Lahir
+                        </p>
+                        <p className="font-medium">
+                            {record.tempat_tanggal_lahir || '-'}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p className="text-muted-foreground">L/P</p>
+                        <p className="font-medium">
+                            {record.jenis_kelamin || '-'}
+                        </p>
                     </div>
 
                     <div>
@@ -58,12 +66,40 @@ return null;
                         <p className="font-medium">{record.jabatan || '-'}</p>
                     </div>
 
-                    <div className="col-span-2">
-                        <p className="text-muted-foreground">Tarif /30 Menit</p>
+                    <div>
+                        <p className="text-muted-foreground">
+                            Tugas Tambahan
+                        </p>
                         <p className="font-medium">
-                            {formatRupiah(record.tarif_per_30_menit)}
+                            {record.tugas_tambahan || '-'}
                         </p>
                     </div>
+
+                    <div>
+                        <p className="text-muted-foreground">
+                            Mata Pelajaran
+                        </p>
+                        <p className="font-medium">
+                            {record.mata_pelajaran || '-'}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p className="text-muted-foreground">
+                            Pendidikan Terakhir
+                        </p>
+                        <p className="font-medium">
+                            {record.pendidikan_terakhir || '-'}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p className="text-muted-foreground">TMT Sekolah</p>
+                        <p className="font-medium">
+                            {record.tmt_sekolah || '-'}
+                        </p>
+                    </div>
+
                 </div>
             </DialogContent>
         </Dialog>

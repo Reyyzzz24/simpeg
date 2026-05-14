@@ -19,6 +19,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { getColumns } from './columns';
 import CreateUserForm from './partials/create-user-form';
+import DeleteUserModal from './partials/delete-user-modal';
 import EditUserModal from './partials/edit-user-modal';
 
 const breadcrumbs = [
@@ -29,6 +30,7 @@ const breadcrumbs = [
 export default function UsersIndex({ users, stats, roles }: any) {
     const [createOpen, setCreateOpen] = useState(false);
     const [editRecord, setEditRecord] = useState<any | null>(null);
+    const [deleteRecord, setDeleteRecord] = useState<any | null>(null);
 
     return (
         <>
@@ -68,23 +70,7 @@ export default function UsersIndex({ users, stats, roles }: any) {
                     <DataTable
                         columns={getColumns({
                             onEdit: (r: any) => setEditRecord(r),
-                            onDelete: (r: any) => {
-                                if (!confirm('Hapus user ini?')) return;
-
-                                fetch(`/users/${r.id}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'X-CSRF-TOKEN':
-                                            (
-                                                document.querySelector(
-                                                    'meta[name="csrf-token"]',
-                                                ) as HTMLMetaElement
-                                            )?.content || '',
-                                    },
-                                })
-                                    .then(() => location.reload())
-                                    .catch(() => alert('Gagal menghapus'));
-                            },
+                            onDelete: (r: any) => setDeleteRecord(r),
                         })}
                         data={users}
                         searchKey="name"
@@ -123,6 +109,12 @@ export default function UsersIndex({ users, stats, roles }: any) {
                         onClose={() => setEditRecord(null)}
                         record={editRecord}
                         roles={roles}
+                    />
+
+                    <DeleteUserModal
+                        isOpen={!!deleteRecord}
+                        onClose={() => setDeleteRecord(null)}
+                        record={deleteRecord}
                     />
                 </div>
             </div>

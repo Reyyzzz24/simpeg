@@ -102,44 +102,78 @@ class DashboardController extends Controller
         ];
     }
 
-    public function index()
+    private function isManagementDashboard(?User $user): bool
     {
+        return $user && in_array($user->role, ['superadmin', 'admin'], true);
+    }
+
+    private function buildPersonalSummary(User $user): array
+    {
+        $todayAttendance = Attendance::where('user_id', $user->id)
+            ->whereDate('tanggal', $this->today())
+            ->first();
+
+        $monthStart = Carbon::now()->setTimezone(config('app.timezone'))->startOfMonth()->toDateString();
+        $monthEnd = Carbon::now()->setTimezone(config('app.timezone'))->endOfMonth()->toDateString();
+
+        $monthlyRecords = Attendance::where('user_id', $user->id)
+            ->whereBetween('tanggal', [$monthStart, $monthEnd])
+            ->get();
+
+        $monthlyLate = $monthlyRecords->filter(function ($p) {
+            return $p->jam_masuk && Carbon::parse($p->jam_masuk)->format('H:i:s') > '08:00:00';
+        })->count();
+
+        return [
+            'today_status' => $todayAttendance?->status_disiplin ?? 'Belum absen',
+            'jam_masuk' => $todayAttendance?->jam_masuk ? Carbon::parse($todayAttendance->jam_masuk)->format('H:i') : null,
+            'jam_pulang' => $todayAttendance?->jam_pulang ? Carbon::parse($todayAttendance->jam_pulang)->format('H:i') : null,
+            'monthly_present' => $monthlyRecords->whereNotNull('jam_masuk')->count(),
+            'monthly_late' => $monthlyLate,
+            'monthly_records' => $monthlyRecords->count(),
+        ];
+    }
+
+    private function dashboardPayload(User $user): array
+    {
+        $isManagementDashboard = $this->isManagementDashboard($user);
+        $quickAccess = $this->buildQuickAccess($user);
+
+        if (! $isManagementDashboard) {
+            return [
+                'isManagementDashboard' => false,
+                'stats' => null,
+                'recent' => [],
+                'trend' => [],
+                'quickAccess' => $quickAccess,
+                'personalSummary' => $this->buildPersonalSummary($user),
+                'announcements' => Announcement::latest()->take(5)->get(),
+            ];
+        }
+
         $today = $this->today();
-
         $totalUsers = User::count();
-
         $presences = $this->presenceQuery($today)->get();
 
-        $stats = $this->buildStats($presences, $totalUsers);
-        $recent = $this->buildRecent($presences);
-        $trend = $this->buildAttendanceTrend();
-        $quickAccess = $this->buildQuickAccess(auth()->user());
-
-        $announcements = Announcement::latest()->take(5)->get();
-
-        return Inertia::render('dashboard', [
-            'stats' => $stats,
-            'recent' => $recent,
-            'trend' => $trend,
+        return [
+            'isManagementDashboard' => true,
+            'stats' => $this->buildStats($presences, $totalUsers),
+            'recent' => $this->buildRecent($presences),
+            'trend' => $this->buildAttendanceTrend(),
             'quickAccess' => $quickAccess,
-            'announcements' => $announcements,
-        ]);
+            'personalSummary' => $this->buildPersonalSummary($user),
+            'announcements' => Announcement::latest()->take(5)->get(),
+        ];
+    }
+
+    public function index()
+    {
+        return Inertia::render('dashboard', $this->dashboardPayload(auth()->user()));
     }
 
     public function data()
     {
-        $today = $this->today();
-
-        $totalUsers = User::count();
-
-        $presences = $this->presenceQuery($today)->get();
-
-        return response()->json([
-            'stats' => $this->buildStats($presences, $totalUsers),
-            'recent' => $this->buildRecent($presences),
-            'trend' => $this->buildAttendanceTrend(),
-            'quickAccess' => $this->buildQuickAccess(auth()->user()),
-        ]);
+        return response()->json($this->dashboardPayload(auth()->user()));
     }
 
     public function calendar(Request $request)

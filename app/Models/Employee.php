@@ -10,6 +10,14 @@ class Employee extends Model
     protected $guarded = [];
     public const STATUS_KERJA_OPTIONS = ['tetap', 'ptt'];
 
+    protected function casts(): array
+    {
+        return [
+            'tahun_lulus' => 'integer',
+            'tahun_masuk_kerja' => 'integer',
+        ];
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

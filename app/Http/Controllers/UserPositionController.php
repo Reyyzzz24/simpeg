@@ -75,9 +75,9 @@ class UserPositionController extends Controller
     /**
      * DELETE
      */
-    public function destroy($id)
+    public function destroy(UserPosition $userPosition)
     {
-        UserPosition::findOrFail($id)->delete();
+        $userPosition->delete();
 
         return back()->with('success', 'Data berhasil dihapus');
     }

@@ -1,36 +1,39 @@
-// partials/delete-employee-modal.tsx
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useForm } from '@inertiajs/react';
 
 export default function DeleteEmployeeModal({ isOpen, onClose, record }: any) {
-    if (!record) return null
+    const { delete: destroy, processing } = useForm();
+
+    if (!record) return null;
 
     const handleDelete = () => {
-        fetch(`/pegawai/${record.id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
-            }
-        }).then(() => location.reload())
-    }
+        destroy(`/employee/${record.id}`, {
+            preserveScroll: true,
+            onSuccess: onClose,
+        });
+    };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Hapus Pegawai</DialogTitle>
                 </DialogHeader>
 
-                <p>Yakin ingin menghapus {record.name}?</p>
+                <p className="text-sm text-muted-foreground">
+                    Yakin ingin menghapus {record.nama}? Akun pengguna yang terhubung juga akan ikut terhapus.
+                </p>
 
                 <DialogFooter>
-                    <Button variant="secondary" onClick={onClose}>Batal</Button>
-                    <Button variant="destructive" onClick={handleDelete}>
+                    <Button variant="secondary" onClick={onClose} disabled={processing}>
+                        Batal
+                    </Button>
+                    <Button variant="destructive" onClick={handleDelete} disabled={processing}>
                         Hapus
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

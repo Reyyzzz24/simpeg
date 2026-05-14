@@ -246,66 +246,62 @@ class PresenceController extends Controller
     {
         $validated = $request->validate([
             'type' => ['required', 'in:masuk,pulang'],
-            'face_image' => ['nullable', 'string'],
+            'face_embedding' => ['required', 'array', 'size:128'],
         ]);
 
-        if (!$validated['face_image']) {
-            return back()->with('error', 'Foto wajah belum terbaca. Pastikan kamera aktif lalu coba lagi.');
-        }
-
+        /** @var \App\Models\User $user */
         $user = Auth::user();
+
         if (!$user->face_hash) {
-            return back()->with('error', 'Daftarkan wajah terlebih dahulu sebelum absen dengan Face Recognition.');
+            return back()->with('error', 'Akses ditolak. Silakan daftarkan wajah Anda terlebih dahulu pada menu pendaftaran.');
         }
 
-        $hash = $this->makeFaceHash($validated['face_image']);
-        if (!$hash) {
-            return back()->with('error', 'Foto wajah tidak bisa diproses. Pastikan wajah terlihat jelas.');
+        $registeredDescriptor = is_array($user->face_hash)
+            ? $user->face_hash
+            : json_decode($user->face_hash, true);
+
+        if (!$registeredDescriptor || !is_array($registeredDescriptor)) {
+            return back()->with('error', 'Data biometrik Anda rusak. Silakan lakukan daftar ulang wajah.');
         }
 
-        if ($this->faceDistance($user->face_hash, $hash) > 112) {
-            return back()->with('error', 'Wajah tidak cocok dengan data yang terdaftar.');
+        $distance = $this->calculateEuclideanDistance($registeredDescriptor, $validated['face_embedding']);
+
+        if ($distance > 0.5) {
+            return back()->with('error', 'Maaf, wajah Anda tidak cocok.');
         }
 
         $result = $this->markCurrentUserPresence($validated['type']);
 
         if (isset($result['redirect_to'])) {
-            return redirect($result['redirect_to']);
+            return redirect($result['redirect_to'])->with('success', 'Wajah terverifikasi. Silakan lengkapi data berikut.');
         }
 
         if ($result['status'] === 'success') {
             return redirect()->route('presence.self.history')
-                ->with('success', $result['message']);
+                ->with('success', 'Verifikasi Berhasil! ' . $result['message']);
         }
 
-        return back()->with($result['status'] === 'success' ? 'success' : 'error', $result['message']);
+        return back()->with(
+            $result['status'] === 'info' ? 'success' : 'error',
+            $result['message']
+        );
     }
 
     public function registerFace(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'face_image' => ['required', 'string'],
+            'face_embedding' => ['required', 'array', 'size:128'],
         ]);
 
         /** @var User $user */
         $user = Auth::user();
 
-        if (!$user) {
-            return redirect()->route('login');
-        }
-
-        $hash = $this->makeFaceHash($validated['face_image']);
-
-        if (!$hash) {
-            return back()->with('error', 'Foto wajah tidak bisa diproses. Pastikan wajah terlihat jelas dan cahaya cukup.');
-        }
-
         $user->update([
-            'face_hash' => $hash,
-            'face_registered_at' => now()->setTimezone(config('app.timezone')),
+            'face_hash' => $validated['face_embedding'],
+            'face_registered_at' => now(),
         ]);
 
-        return back()->with('success', 'Wajah berhasil didaftarkan. Sekarang Face Recognition bisa digunakan untuk absen.');
+        return redirect()->back()->with('success', 'Data biometrik wajah berhasil diperbarui.');
     }
 
     public function teacherCheckout()
@@ -634,5 +630,20 @@ class PresenceController extends Controller
                 'status' => $item->status_disiplin ?? 'HADIR',
             ];
         }));
+    }
+
+    private function calculateEuclideanDistance(array $a, array $b): float
+    {
+        // Pastikan kedua array memiliki panjang yang sama
+        if (count($a) !== count($b)) {
+            return 1.0; // Anggap sangat jauh/berbeda jika ukuran array tidak cocok
+        }
+
+        $sum = 0.0;
+        foreach ($a as $i => $val) {
+            $sum += pow($val - $b[$i], 2);
+        }
+
+        return sqrt($sum);
     }
 }

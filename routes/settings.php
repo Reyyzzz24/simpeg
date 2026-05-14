@@ -27,8 +27,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('settings/appearance');
     })->name('appearance.edit');
 
-    Route::get('settings/app-setting', [AppSettingController::class, 'edit'])->name('app-setting.edit');
-    Route::post('settings/app-setting', [AppSettingController::class, 'update'])->name('app-setting.update');
+    Route::get('settings/app-setting', [AppSettingController::class, 'edit'])
+        ->middleware('permission:app-settings.view')
+        ->name('app-setting.edit');
+    Route::post('settings/app-setting', [AppSettingController::class, 'update'])
+        ->middleware('permission:app-settings.edit')
+        ->name('app-setting.update');
 
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');

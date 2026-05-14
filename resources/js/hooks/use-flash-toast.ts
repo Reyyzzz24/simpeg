@@ -5,15 +5,52 @@ import type { FlashToast } from '@/types/ui';
 
 export function useFlashToast(): void {
     useEffect(() => {
-        return router.on('flash', (event) => {
-            const flash = (event as CustomEvent).detail?.flash;
-            const data = flash?.toast as FlashToast | undefined;
+        let lastMessage: string | null = null;
 
-            if (!data) {
+        const showMessage = (type: 'success' | 'error' | 'info' | 'warning', message?: string) => {
+            if (!message || lastMessage === `${type}:${message}`) {
                 return;
             }
 
-            toast[data.type](data.message);
+            toast[type](message);
+            lastMessage = `${type}:${message}`;
+        };
+
+        const showFlash = (flash?: {
+            success?: string;
+            error?: string;
+            toast?: FlashToast;
+        }) => {
+            if (flash?.toast?.type && flash.toast.message) {
+                showMessage(flash.toast.type, flash.toast.message);
+            }
+
+            showMessage('success', flash?.success);
+            showMessage('error', flash?.error);
+        };
+
+        const removeSuccessListener = router.on('success', (event) => {
+            const page = (event as CustomEvent).detail?.page;
+            const props = page?.props ?? {};
+
+            showFlash(props.flash);
+
+            if (props.errors && Object.keys(props.errors).length > 0) {
+                showMessage('error', 'Mohon periksa kembali inputan Anda.');
+            }
         });
+
+        const removeErrorListener = router.on('error', (event) => {
+            const errors = (event as CustomEvent).detail?.errors ?? {};
+
+            if (Object.keys(errors).length > 0) {
+                showMessage('error', 'Mohon periksa kembali inputan Anda.');
+            }
+        });
+
+        return () => {
+            removeSuccessListener();
+            removeErrorListener();
+        };
     }, []);
 }

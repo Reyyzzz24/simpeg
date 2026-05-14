@@ -21,19 +21,21 @@ class EmployeeController extends Controller
                 return [
                     'id' => $item->id,
                     'nama' => $item->nama,
+                    'tempat_tanggal_lahir' => $item->tempat_tanggal_lahir,
+                    'jenis_kelamin' => $item->jenis_kelamin,
+                    'tingkat_pendidikan' => $item->tingkat_pendidikan,
+                    'tahun_lulus' => $item->tahun_lulus,
+                    'tahun_masuk_kerja' => $item->tahun_masuk_kerja,
                     'nip' => $item->nip,
                     'sub_role' => $item->sub_role,
                     'status_kerja' => $item->status_kerja,
-                    'position_id' => $item->position_id, // Simpan ID
-                    'jabatan' => $item->position->name ?? '-', // Ambil nama dari relasi
-                    'gaji_pokok' => (float) $item->gaji_pokok,
-                    'transport_harian' => (float) $item->transport_harian,
+                    'position_id' => $item->position_id,
+                    'jabatan' => $item->position->name ?? '-',
                 ];
             });
 
         return Inertia::render('employee/index', [
             'employees' => $employees,
-            'positions' => \App\Models\Position::all(), // Kirim data jabatan untuk dropdown
             'stats' => ['total' => $employees->count()],
         ]);
     }
@@ -42,22 +44,26 @@ class EmployeeController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
+            'tempat_tanggal_lahir' => 'nullable|string|max:255',
+            'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
+            'tingkat_pendidikan' => 'nullable|string|max:255',
+            'tahun_lulus' => 'nullable|integer|min:1900|max:2100',
+            'tahun_masuk_kerja' => 'nullable|integer|min:1900|max:2100',
             'nip' => 'nullable|string|unique:employees,nip,' . $employee->id,
             'sub_role' => 'required|string',
             'status_kerja' => ['required', Rule::in(Employee::STATUS_KERJA_OPTIONS)],
-            'position_id' => 'nullable|exists:positions,id', // Validasi position_id
-            'gaji_pokok' => 'nullable|numeric',
-            'transport_harian' => 'nullable|numeric',
         ]);
 
         $employee->update([
             'nama' => $validated['nama'],
+            'tempat_tanggal_lahir' => $validated['tempat_tanggal_lahir'] ?? null,
+            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
+            'tingkat_pendidikan' => $validated['tingkat_pendidikan'] ?? null,
+            'tahun_lulus' => $validated['tahun_lulus'] ?? null,
+            'tahun_masuk_kerja' => $validated['tahun_masuk_kerja'] ?? null,
             'nip' => $validated['nip'],
             'sub_role' => $validated['sub_role'],
             'status_kerja' => $validated['status_kerja'],
-            'position_id' => $validated['position_id'],
-            'gaji_pokok' => $validated['gaji_pokok'] ?? 0,
-            'transport_harian' => $validated['transport_harian'] ?? 0,
         ]);
 
         if ($employee->user) {

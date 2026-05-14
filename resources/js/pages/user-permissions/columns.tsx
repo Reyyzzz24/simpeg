@@ -24,6 +24,15 @@ export const columns: ColumnDef<any>[] = [
     {
         accessorKey: 'created_at',
         header: 'Diberikan',
+        cell: ({ row }) => {
+            const date = new Date(row.getValue('created_at'));
+
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+            });
+        },
     },
 ];
 

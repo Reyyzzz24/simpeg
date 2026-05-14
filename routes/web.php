@@ -160,13 +160,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [UserPermissionController::class, 'index'])->middleware('permission:permissions.view')->name('index');
         Route::post('/store', [UserPermissionController::class, 'store'])->middleware('permission:permissions.create')->name('store');
         Route::put('/{userPermission}', [UserPermissionController::class, 'update'])->middleware('permission:permissions.edit')->name('update');
-        Route::delete('/{userPermission}', [UserPermissionController::class, 'destroy'])->middleware('permission:permissions.delete')->name('destroy');
+        Route::delete('/', [UserPermissionController::class, 'destroy'])->middleware('permission:permissions.delete')->name('destroy');
     });
     Route::prefix('user-positions')->name('user-positions.')->group(function () {
-        Route::get('/', [UserPositionController::class, 'index'])->name('index');
-        Route::post('/', [UserPositionController::class, 'store'])->name('store');
-        Route::put('/{userPosition}', [UserPositionController::class, 'update'])->name('update');
-        Route::delete('/{id}', [UserPositionController::class, 'destroy'])->name('destroy');
+        Route::get('/', [UserPositionController::class, 'index'])->middleware('permission:user-positions.view')->name('index');
+        Route::post('/', [UserPositionController::class, 'store'])->middleware('permission:user-positions.create')->name('store');
+        Route::put('/{userPosition}', [UserPositionController::class, 'update'])->middleware('permission:user-positions.edit')->name('update');
+        Route::delete('/{userPosition}', [UserPositionController::class, 'destroy'])->middleware('permission:user-positions.delete')->name('destroy');
     });
 });
 

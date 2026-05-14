@@ -1,9 +1,10 @@
 import { router } from '@inertiajs/react';
-import { ArrowLeft, Camera, RefreshCw, ScanFace, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Camera, RefreshCw, ScanFace, ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import { DashboardCard } from '@/components/dashboard-card';
+import * as faceapi from 'face-api.js';
 
 type PresenceType = 'masuk' | 'pulang';
 
@@ -20,13 +21,52 @@ export default function FaceRecognitionPanel({
     faceRegisteredAt,
     isTeacherCheckout,
 }: Props) {
+    const [modelsLoaded, setModelsLoaded] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [cameraError, setCameraError] = useState('');
+    const [verificationError, setVerificationError] = useState('');
     const [isCameraReady, setIsCameraReady] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+    useEffect(() => {
+        const loadModels = async () => {
+            try {
+                const MODEL_URL = '/models';
+                await Promise.all([
+                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+                ]);
+                setModelsLoaded(true);
+            } catch (e) {
+                setCameraError("Gagal memuat model biometrik.");
+            }
+        };
+        loadModels();
+    }, []);
+
+    const captureFaceDescriptor = async () => {
+        if (!videoRef.current || !modelsLoaded) return null;
+
+        const detection = await faceapi
+            .detectSingleFace(videoRef.current)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+        if (!detection) {
+            setVerificationError('');
+            setCameraError("Wajah tidak terdeteksi atau tidak jelas.");
+            return null;
+        }
+
+        setCameraError('');
+        return Array.from(detection.descriptor); // Ubah Float32Array jadi Array biasa
+    };
+
 
     const stopCamera = () => {
         streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -37,6 +77,7 @@ export default function FaceRecognitionPanel({
     const startCamera = async () => {
         stopCamera();
         setCameraError('');
+        setVerificationError('');
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -76,6 +117,7 @@ export default function FaceRecognitionPanel({
         stopCamera();
         setIsSubmitting(false);
         setCameraError('');
+        setVerificationError('');
         setIsOpen(false);
     };
 
@@ -102,32 +144,48 @@ export default function FaceRecognitionPanel({
         });
     };
 
-    const registerFace = () => {
-        const faceImage = captureFace();
+    const registerFace = async () => {
+        setIsSubmitting(true);
+        setVerificationError('');
+        const descriptor = await captureFaceDescriptor();
 
-        if (!faceImage) {
-            setCameraError('Wajah belum terbaca. Buka kamera lalu coba lagi.');
-
+        if (!descriptor) {
+            setIsSubmitting(false);
             return;
         }
 
-        postFace('/presence/self/face/register', {
-            face_image: faceImage,
+        router.post('/presence/self/face/register', {
+            face_embedding: descriptor,
+        }, {
+            onFinish: () => setIsSubmitting(false)
         });
     };
 
-    const submitPresence = () => {
-        const faceImage = captureFace();
+    const submitPresence = async () => {
+        setIsSubmitting(true);
+        setVerificationError('');
+        const descriptor = await captureFaceDescriptor();
 
-        if (!faceImage) {
-            setCameraError('Wajah belum terbaca. Buka kamera lalu coba lagi.');
-
+        if (!descriptor) {
+            setIsSubmitting(false);
             return;
         }
 
-        postFace('/presence/self/face', {
+        router.post('/presence/self/face', {
             type,
-            face_image: faceImage,
+            face_embedding: descriptor, // Kirim array angka
+        }, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                const flash = (page.props as any)?.flash;
+                if (flash?.error) {
+                    setVerificationError(flash.error);
+                }
+            },
+            onError: () => {
+                setVerificationError('Maaf, wajah Anda tidak cocok.');
+            },
+            onFinish: () => setIsSubmitting(false)
         });
     };
 
@@ -224,17 +282,24 @@ export default function FaceRecognitionPanel({
             </div>
 
             <div className="space-y-4 border-t border-white/10 p-4">
-                <p className="text-sm text-white/80">
-                    {cameraError ||
-                        (isTeacherCheckout
-                            ? 'Untuk guru, absen pulang lewat wajah tetap akan diarahkan ke formulir jam mengajar.'
-                            : 'Pastikan wajah berada di dalam bingkai dan cahaya cukup.')}
-                </p>
+                {verificationError ? (
+                    <div className="flex items-start gap-3 rounded-lg border border-red-400/40 bg-red-500/15 p-3 text-sm text-red-50">
+                        <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                        <span>{verificationError}</span>
+                    </div>
+                ) : (
+                    <p className="text-sm text-white/80">
+                        {cameraError ||
+                            (isTeacherCheckout
+                                ? 'Untuk guru, absen pulang lewat wajah tetap akan diarahkan ke formulir jam mengajar.'
+                                : 'Pastikan wajah berada di dalam bingkai dan cahaya cukup.')}
+                    </p>
+                )}
 
                 <div className="grid gap-3 sm:grid-cols-2">
                     <Button
                         variant={faceRegistered ? 'outline' : 'default'}
-                        disabled={!isCameraReady || isSubmitting}
+                        disabled={!isCameraReady || isSubmitting || !modelsLoaded}
                         onClick={registerFace}
                     >
                         <ShieldCheck className="mr-2 size-4" />

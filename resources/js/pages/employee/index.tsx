@@ -18,7 +18,7 @@ const breadcrumbs = [
     { title: 'Pegawai', href: '/employee' },
 ];
 
-export default function EmployeeIndex({ employees, positions, stats }: any) {
+export default function EmployeeIndex({ employees, stats }: any) {
     const [edit, setEdit] = useState(null);
     const [detail, setDetail] = useState(null);
     const [del, setDel] = useState(null);
@@ -31,7 +31,7 @@ export default function EmployeeIndex({ employees, positions, stats }: any) {
                 <PageHeader
                     title="Manajemen Pegawai"
                     subtitle="Sistem Informasi Kepegawaian SMKKPDM"
-                    description="Kelola data pegawai, jabatan, dan informasi administratif dalam sistem."
+                    description="Kelola biodata pegawai dan informasi administratif dalam sistem."
                     gradient="bg-linear-to-r from-blue-600 to-indigo-500"
                     icon={<Users className="size-20 text-white" />}
                     shadowColor="shadow-blue-200/50"
@@ -71,7 +71,6 @@ export default function EmployeeIndex({ employees, positions, stats }: any) {
                         isOpen={!!edit}
                         onClose={() => setEdit(null)}
                         record={edit}
-                        positions={positions}
                     />
                     <DetailEmployeeModal
                         isOpen={!!detail}

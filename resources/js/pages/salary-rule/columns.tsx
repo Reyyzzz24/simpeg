@@ -80,7 +80,11 @@ export const getColumns = (opts: any): ColumnDef<any>[] => [
                 <div className="flex flex-wrap gap-1">
                     {items.map((c: any) => (
                         <Badge key={c.id} variant="secondary">
-                            {c.amount_type}
+                            {c.amount_type === 'formula'
+                                ? c.formula_type === 'jam_kerja'
+                                    ? `Formula Jam Kerja / ${c.formula_interval_minutes ?? 30} menit`
+                                    : 'Formula Hadir'
+                                : c.amount_type}
                         </Badge>
                     ))}
                 </div>
@@ -97,6 +101,14 @@ export const getColumns = (opts: any): ColumnDef<any>[] => [
         cell: ({ row }) => {
             const items = row.original.salary_rule_components ?? [];
 
+            // Helper untuk format Rupiah agar tidak mengulang kode
+            const formatRupiah = (value: any) =>
+                new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0,
+                }).format(Number(value));
+
             return (
                 <div className="flex flex-wrap gap-1">
                     {items.map((c: any) => {
@@ -104,14 +116,13 @@ export const getColumns = (opts: any): ColumnDef<any>[] => [
 
                         if (c.amount_type === 'percentage') {
                             display = `${Number(c.amount)}%`;
-                        } else if (c.amount_type === 'fixed') {
-                            display = new Intl.NumberFormat('id-ID', {
-                                style: 'currency',
-                                currency: 'IDR',
-                                minimumFractionDigits: 0,
-                            }).format(Number(c.amount));
+                        } else if (
+                            c.amount_type === 'fixed' ||
+                            c.amount_type === 'formula'
+                        ) {
+                            // Sekarang fixed dan formula menggunakan format yang sama
+                            display = formatRupiah(c.amount);
                         } else {
-                            // fallback (misal formula)
                             display = String(c.amount);
                         }
 

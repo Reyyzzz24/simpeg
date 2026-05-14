@@ -1,26 +1,34 @@
 import { router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { useState, useMemo } from 'react';
-
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
     DialogTrigger,
 } from '@/components/ui/dialog';
-
 import { Input } from '@/components/ui/input';
-
 import {
     Select,
-    SelectTrigger,
-    SelectValue,
     SelectContent,
     SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
+
+type AmountType = 'fixed' | 'percentage' | 'formula';
+type FormulaType = 'hadir' | 'jam_kerja';
+
+type RuleComponentForm = {
+    id: number;
+    amount_type: AmountType;
+    formula_type: FormulaType;
+    formula_interval_minutes: number;
+    amount: number;
+};
 
 type Props = {
     open: boolean;
@@ -31,91 +39,85 @@ type Props = {
 
 const roles = ['admin', 'guru', 'pegawai'] as const;
 
-// Definisi enum sub_role sesuai database
 const SUB_ROLE_OPTIONS = {
     guru: ['normatif', 'produktif'],
     pegawai: ['tu', 'struktural', 'karyawan', 'staf'],
 } as const;
 
-export default function SalaryRuleModal({
-    open,
-    setOpen,
-    components,
-    positions,
-}: Props) {
+const defaultComponent = (id: number): RuleComponentForm => ({
+    id,
+    amount_type: 'fixed',
+    formula_type: 'hadir',
+    formula_interval_minutes: 30,
+    amount: 0,
+});
+
+export default function SalaryRuleModal({ open, setOpen, components }: Props) {
     const [form, setForm] = useState({
         role: '',
         sub_role: '',
         status_kerja: 'tetap',
         is_active: true,
-        components: [] as {
-            id: number;
-            amount_type: 'fixed' | 'percentage' | 'formula';
-            amount: number;
-        }[],
+        components: [] as RuleComponentForm[],
     });
 
-    // Mendapatkan opsi sub_role berdasarkan role yang sedang dipilih
     const currentSubRoleOptions = useMemo(() => {
         if (!form.role) {
-return [];
-}
+            return [];
+        }
 
         return (
-            SUB_ROLE_OPTIONS[form.role as keyof typeof SUB_ROLE_OPTIONS] || []
+            SUB_ROLE_OPTIONS[form.role as keyof typeof SUB_ROLE_OPTIONS] ?? []
         );
     }, [form.role]);
 
-    /** HANDLING ROLE CHANGE */
     const handleRoleChange = (value: string) => {
         setForm((prev) => ({
             ...prev,
             role: value,
-            sub_role: '', // Reset sub_role saat role berubah
+            sub_role: '',
         }));
     };
 
-    /** ADD COMPONENT */
     const addComponent = (id: string) => {
         const numId = Number(id);
+
         setForm((prev) => {
-            if (prev.components.find((c) => c.id === numId)) {
-return prev;
-}
+            if (prev.components.some((component) => component.id === numId)) {
+                return prev;
+            }
 
             return {
                 ...prev,
-                components: [
-                    ...prev.components,
-                    {
-                        id: numId,
-                        amount_type: 'fixed',
-                        amount: 0,
-                    },
-                ],
+                components: [...prev.components, defaultComponent(numId)],
             };
         });
     };
 
-    /** REMOVE COMPONENT */
     const removeComponent = (id: number) => {
         setForm((prev) => ({
             ...prev,
-            components: prev.components.filter((c) => c.id !== id),
-        }));
-    };
-
-    /** UPDATE COMPONENT FIELD */
-    const updateComponent = (id: number, key: string, value: any) => {
-        setForm((prev) => ({
-            ...prev,
-            components: prev.components.map((c) =>
-                c.id === id ? { ...c, [key]: value } : c,
+            components: prev.components.filter(
+                (component) => component.id !== id,
             ),
         }));
     };
 
-    /** SUBMIT */
+    const updateComponent = (
+        id: number,
+        key: keyof RuleComponentForm,
+        value: RuleComponentForm[keyof RuleComponentForm],
+    ) => {
+        setForm((prev) => ({
+            ...prev,
+            components: prev.components.map((component) =>
+                component.id === id
+                    ? { ...component, [key]: value }
+                    : component,
+            ),
+        }));
+    };
+
     const submit = () => {
         router.post(
             '/salary-rules',
@@ -156,12 +158,12 @@ return prev;
                 <DialogHeader>
                     <DialogTitle>Tambah Salary Rule</DialogTitle>
                     <DialogDescription>
-                        Rule berbasis role + sub role + komponen gaji.
+                        Rule berbasis role, sub role, status kerja, dan komponen
+                        gaji.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="flex w-full flex-col gap-4">
-                    {/* ROLE */}
                     <div className="space-y-1">
                         <label className="text-xs font-medium">
                             Pilih Role Utama
@@ -174,28 +176,30 @@ return prev;
                                 <SelectValue placeholder="Pilih Role" />
                             </SelectTrigger>
                             <SelectContent>
-                                {roles.map((r) => (
+                                {roles.map((role) => (
                                     <SelectItem
-                                        key={r}
-                                        value={r}
+                                        key={role}
+                                        value={role}
                                         className="capitalize"
                                     >
-                                        {r}
+                                        {role}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* SUB ROLE (Dinamis) */}
                     <div className="space-y-1">
                         <label className="text-xs font-medium">
                             Sub Role / Kategori
                         </label>
                         <Select
                             value={form.sub_role}
-                            onValueChange={(v) =>
-                                setForm((prev) => ({ ...prev, sub_role: v }))
+                            onValueChange={(value) =>
+                                setForm((prev) => ({
+                                    ...prev,
+                                    sub_role: value,
+                                }))
                             }
                             disabled={!form.role}
                         >
@@ -218,17 +222,16 @@ return prev;
                         </Select>
                     </div>
 
-                    {/* STATUS KERJA */}
                     <div className="space-y-1">
                         <label className="text-xs font-medium">
                             Status Kerja
                         </label>
                         <Select
                             value={form.status_kerja}
-                            onValueChange={(v) =>
+                            onValueChange={(value) =>
                                 setForm((prev) => ({
                                     ...prev,
-                                    status_kerja: v,
+                                    status_kerja: value,
                                 }))
                             }
                         >
@@ -244,7 +247,6 @@ return prev;
 
                     <hr />
 
-                    {/* ADD COMPONENT */}
                     <div className="space-y-1">
                         <label className="text-xs font-medium">
                             Komponen Gaji
@@ -254,48 +256,52 @@ return prev;
                                 <SelectValue placeholder="Tambah Komponen" />
                             </SelectTrigger>
                             <SelectContent>
-                                {components.map((c: any) => (
-                                    <SelectItem key={c.id} value={String(c.id)}>
-                                        {c.name}
+                                {components.map((component: any) => (
+                                    <SelectItem
+                                        key={component.id}
+                                        value={String(component.id)}
+                                    >
+                                        {component.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* COMPONENT LIST */}
                     <div className="space-y-3">
-                        {form.components.map((c) => {
-                            const comp = components.find((x) => x.id === c.id);
+                        {form.components.map((component) => {
+                            const masterComponent = components.find(
+                                (item) => item.id === component.id,
+                            );
 
                             return (
                                 <div
-                                    key={c.id}
+                                    key={component.id}
                                     className="space-y-2 rounded border bg-slate-50/50 p-3"
                                 >
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-semibold">
-                                            {comp?.name}
+                                            {masterComponent?.name}
                                         </span>
                                         <button
                                             type="button"
                                             onClick={() =>
-                                                removeComponent(c.id)
+                                                removeComponent(component.id)
                                             }
                                             className="text-lg text-red-500"
                                         >
-                                            ✕
+                                            x
                                         </button>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-2">
                                         <Select
-                                            value={c.amount_type}
-                                            onValueChange={(v) =>
+                                            value={component.amount_type}
+                                            onValueChange={(value) =>
                                                 updateComponent(
-                                                    c.id,
+                                                    component.id,
                                                     'amount_type',
-                                                    v,
+                                                    value as AmountType,
                                                 )
                                             }
                                         >
@@ -310,7 +316,7 @@ return prev;
                                                     Percentage (%)
                                                 </SelectItem>
                                                 <SelectItem value="formula">
-                                                    Formula (Kehadiran)
+                                                    Formula
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -318,45 +324,104 @@ return prev;
                                         <Input
                                             type="number"
                                             className="h-8 text-xs"
-                                            value={c.amount}
-                                            onChange={(e) =>
+                                            value={component.amount}
+                                            onChange={(event) =>
                                                 updateComponent(
-                                                    c.id,
+                                                    component.id,
                                                     'amount',
-                                                    Number(e.target.value),
+                                                    Number(event.target.value),
                                                 )
                                             }
                                             placeholder={
-                                                c.amount_type === 'formula'
-                                                    ? 'Tarif/Hadir'
+                                                component.amount_type ===
+                                                'formula'
+                                                    ? component.formula_type ===
+                                                      'jam_kerja'
+                                                        ? 'Nominal per interval'
+                                                        : 'Tarif/Hadir'
                                                     : 'Nilai'
                                             }
                                         />
                                     </div>
 
-                                    {/* INFO TAMBAHAN UNTUK FORMULA */}
-                                    {c.amount_type === 'formula' && (
-                                        <p className="text-[10px] leading-tight text-blue-600 italic">
-                                            * Otomatis: (Nominal × Total status
-                                            'hadir' di absensi)
-                                        </p>
+                                    {component.amount_type === 'formula' && (
+                                        <div className="space-y-2 rounded-md border border-blue-100 bg-blue-50 p-2">
+                                            <p className="text-xs font-medium text-blue-700">
+                                                Pengaturan Formula
+                                            </p>
+                                            <div className="grid gap-2 sm:grid-cols-2">
+                                                <Select
+                                                    value={
+                                                        component.formula_type
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        updateComponent(
+                                                            component.id,
+                                                            'formula_type',
+                                                            value as FormulaType,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="hadir">
+                                                            Hadir
+                                                        </SelectItem>
+                                                        <SelectItem value="jam_kerja">
+                                                            Jam Kerja
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    className="h-8 text-xs"
+                                                    value={
+                                                        component.formula_interval_minutes
+                                                    }
+                                                    disabled={
+                                                        component.formula_type !==
+                                                        'jam_kerja'
+                                                    }
+                                                    onChange={(event) =>
+                                                        updateComponent(
+                                                            component.id,
+                                                            'formula_interval_minutes',
+                                                            Number(
+                                                                event.target
+                                                                    .value || 1,
+                                                            ),
+                                                        )
+                                                    }
+                                                    placeholder="Menit per nominal"
+                                                />
+                                            </div>
+                                            <p className="text-[10px] leading-tight text-blue-600 italic">
+                                                {component.formula_type ===
+                                                'jam_kerja'
+                                                    ? '* Otomatis: total menit kerja dibagi interval menit lalu dikali nominal.'
+                                                    : "* Otomatis: nominal dikali total status 'hadir' di absensi."}
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
                             );
                         })}
                     </div>
 
-                    {/* STATUS */}
                     <div className="space-y-1">
                         <label className="text-xs font-medium">
                             Status Rule
                         </label>
                         <Select
                             value={form.is_active ? '1' : '0'}
-                            onValueChange={(v) =>
+                            onValueChange={(value) =>
                                 setForm((prev) => ({
                                     ...prev,
-                                    is_active: v === '1',
+                                    is_active: value === '1',
                                 }))
                             }
                         >

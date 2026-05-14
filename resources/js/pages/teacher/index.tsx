@@ -9,7 +9,7 @@ import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import AppLayout from '@/layouts/app-layout';
 import { getColumns } from './columns';
-import DeleteConfirmDialog from './partials/delete-teacher-modal';
+import DeleteTeacherModal from './partials/delete-teacher-modal';
 import DetailTeacherModal from './partials/detail-teacher-modal';
 import EditTeacherModal from './partials/edit-teacher-modal';
 
@@ -80,7 +80,7 @@ export default function TeacherIndex({ teachers, positions, stats }: any) {
                         record={detail}
                     />
 
-                    <DeleteConfirmDialog
+                    <DeleteTeacherModal
                         isOpen={!!del}
                         onClose={() => setDel(null)}
                         record={del}
