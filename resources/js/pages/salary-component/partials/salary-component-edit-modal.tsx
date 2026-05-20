@@ -11,14 +11,6 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import InputError from '@/components/input-error'
 
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-
 import { useForm } from '@inertiajs/react'
 import { useEffect } from 'react'
 
@@ -30,7 +22,6 @@ export default function SalaryComponentEditModal({
 
     const { data, setData, put, processing, errors, reset } = useForm({
         name: '',
-        type: 'fixed',
         default_amount: 0,
     })
 
@@ -39,7 +30,6 @@ export default function SalaryComponentEditModal({
 
         setData({
             name: record.name ?? '',
-            type: record.type ?? 'fixed',
             default_amount: record.default_amount ?? 0,
         })
     }, [record])
@@ -76,26 +66,6 @@ export default function SalaryComponentEditModal({
                             onChange={(e) => setData('name', e.target.value)}
                         />
                         <InputError message={errors.name} />
-                    </div>
-
-                    {/* TYPE */}
-                    <div>
-                        <Label>Tipe Komponen</Label>
-                        <Select
-                            value={data.type}
-                            onValueChange={(v) => setData('type', v)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Pilih tipe" />
-                            </SelectTrigger>
-
-                            <SelectContent>
-                                <SelectItem value="fixed">Fixed</SelectItem>
-                                <SelectItem value="percentage">Percentage</SelectItem>
-                                <SelectItem value="formula">Formula</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <InputError message={errors.type} />
                     </div>
 
                     {/* DEFAULT AMOUNT */}

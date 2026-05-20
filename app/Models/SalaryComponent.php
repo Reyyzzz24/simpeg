@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class SalaryComponent extends Model
 {
-    protected $fillable = ['name', 'code', 'type', 'default_amount'];
+    protected $fillable = ['name', 'code', 'default_amount'];
 
     public function rules()
     {

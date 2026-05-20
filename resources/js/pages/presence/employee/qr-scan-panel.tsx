@@ -164,60 +164,17 @@ export default function QrScanPanel() {
                     </CardContent>
                 </DashboardCard>
             ) : (
-                <div className="fixed inset-0 z-50 flex flex-col bg-black">
-                    <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
-                        <Button
-                            variant="outline"
-                            className="border-white/20"
-                            onClick={handleBack}
-                        >
-                            <ArrowLeft className="mr-2 size-4" />
-                            Back
-                        </Button>
-
-                        <Button
-                            variant="outline"
-                            className="border-white/20"
-                            onClick={startCamera}
-                        >
-                            <RefreshCw className="mr-2 size-4" />
-                            Restart Kamera
-                        </Button>
-                    </div>
-
-                    <div className="relative flex-1 bg-black">
-                        <video
-                            ref={videoRef}
-                            className="h-full w-full object-cover"
-                            playsInline
-                            muted
-                        />
-                        <canvas ref={canvasRef} className="hidden" />
-
-                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                            <div className="size-64 rounded-3xl border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
-                        </div>
-
-                        {!isCameraReady && !cameraError && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
-                                <div className="text-center">
-                                    <Camera className="mx-auto mb-2 size-8" />
-                                    Membuka kamera...
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="border-t border-white/10 p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="text-sm text-white/80">
-                                {cameraError ||
-                                    (detectedQr
-                                        ? 'QR terdeteksi, memproses...'
-                                        : isCameraReady
-                                            ? 'Kamera membaca QR secara otomatis.'
-                                            : 'Menunggu kamera siap...')}
-                            </div>
+                <div className="fixed inset-0 z-50 flex flex-col bg-black md:items-center md:justify-center md:bg-black/80 md:p-6 md:backdrop-blur-sm">
+                    <div className="flex min-h-dvh w-full flex-col bg-black md:h-[min(760px,calc(100vh-3rem))] md:min-h-0 md:max-w-5xl md:overflow-hidden md:rounded-2xl md:border md:border-white/10 md:shadow-2xl">
+                        <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
+                            <Button
+                                variant="outline"
+                                className="border-white/20"
+                                onClick={handleBack}
+                            >
+                                <ArrowLeft className="mr-2 size-4" />
+                                Back
+                            </Button>
 
                             <Button
                                 variant="outline"
@@ -225,8 +182,53 @@ export default function QrScanPanel() {
                                 onClick={startCamera}
                             >
                                 <RefreshCw className="mr-2 size-4" />
-                                Buka Ulang
+                                Restart Kamera
                             </Button>
+                        </div>
+
+                        <div className="relative flex-1 bg-black md:flex md:items-center md:justify-center">
+                            <video
+                                ref={videoRef}
+                                className="h-full w-full object-cover md:object-contain"
+                                playsInline
+                                muted
+                            />
+                            <canvas ref={canvasRef} className="hidden" />
+
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                <div className="size-64 rounded-3xl border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)] md:size-72" />
+                            </div>
+
+                            {!isCameraReady && !cameraError && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
+                                    <div className="text-center">
+                                        <Camera className="mx-auto mb-2 size-8" />
+                                        Membuka kamera...
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="border-t border-white/10 p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="text-sm text-white/80">
+                                    {cameraError ||
+                                        (detectedQr
+                                            ? 'QR terdeteksi, memproses...'
+                                            : isCameraReady
+                                                ? 'Kamera membaca QR secara otomatis.'
+                                                : 'Menunggu kamera siap...')}
+                                </div>
+
+                                <Button
+                                    variant="outline"
+                                    className="border-white/20"
+                                    onClick={startCamera}
+                                >
+                                    <RefreshCw className="mr-2 size-4" />
+                                    Buka Ulang
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>

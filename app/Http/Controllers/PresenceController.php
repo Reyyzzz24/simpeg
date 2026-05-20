@@ -61,12 +61,16 @@ class PresenceController extends Controller
 
         $timeWindow = $this->presenceTimeWindow();
 
+        $statusCounts = $presences
+            ->map(fn($presence) => strtolower((string) ($presence['status'] ?? '')))
+            ->countBy();
+
         $stats = [
-            'total_present' => $presences->where('status', 'HADIR')->count(),
-            'total_late' => $presences
-                ->filter(fn($p) => $p['masuk_time'] && $p['masuk_time'] > $timeWindow['masuk_end'])
-                ->count(),
-            'total_missing' => User::count() - $presences->count(),
+            'total_present' => (int) ($statusCounts->get('hadir') ?? 0),
+            'total_late' => (int) ($statusCounts->get('terlambat') ?? 0),
+            'total_alpha' => (int) ($statusCounts->get('alpha') ?? 0),
+            'total_izin' => (int) ($statusCounts->get('izin') ?? 0),
+            'total_sakit' => (int) ($statusCounts->get('sakit') ?? 0),
         ];
 
         $users = User::select('id', 'name')

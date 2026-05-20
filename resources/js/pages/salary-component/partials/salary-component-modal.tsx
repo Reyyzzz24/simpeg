@@ -14,14 +14,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus } from 'lucide-react'
 
-import {
-    Select,
-    SelectTrigger,
-    SelectValue,
-    SelectContent,
-    SelectItem,
-} from '@/components/ui/select'
-
 type Props = {
     open: boolean
     setOpen: (v: boolean) => void
@@ -31,7 +23,6 @@ export default function SalaryComponentModal({ open, setOpen }: Props) {
 
     const [form, setForm] = useState({
         name: '',
-        type: 'fixed',
         default_amount: 0,
     })
 
@@ -40,7 +31,6 @@ export default function SalaryComponentModal({ open, setOpen }: Props) {
             onSuccess: () => {
                 setForm({
                     name: '',
-                    type: 'fixed',
                     default_amount: 0,
                 })
                 setOpen(false)
@@ -77,23 +67,6 @@ export default function SalaryComponentModal({ open, setOpen }: Props) {
                             setForm({ ...form, name: e.target.value })
                         }
                     />
-
-                    {/* TYPE */}
-                    <Select
-                        value={form.type}
-                        onValueChange={(value) =>
-                            setForm({ ...form, type: value })
-                        }
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Tipe" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="fixed">Fixed</SelectItem>
-                            <SelectItem value="percentage">Percentage</SelectItem>
-                            <SelectItem value="formula">Formula</SelectItem>
-                        </SelectContent>
-                    </Select>
 
                     {/* DEFAULT AMOUNT */}
                     <Input

@@ -34,5 +34,11 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'portal' => [
+        'client_id' => env('PORTAL_CLIENT_ID'),
+        'client_secret' => env('PORTAL_CLIENT_SECRET'),
+        'redirect' => env('PORTAL_REDIRECT_URI'),
+        'host' => env('PORTAL_HOST', 'http://127.0.0.1:8000'),
+    ],
 
 ];

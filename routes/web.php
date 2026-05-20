@@ -23,10 +23,15 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserPermissionController;
+use App\Http\Controllers\Auth\SSOController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('home');
+
+Route::get('/auth/portal', [SSOController::class, 'redirect'])->name('auth.portal');
+Route::get('/auth/portal/callback', [SSOController::class, 'callback'])->name('auth.portal.callback');
+Route::post('/auth/portal/logout', [SSOController::class, 'logout'])->name('auth.portal.logout');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 

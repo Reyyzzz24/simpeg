@@ -1,5 +1,4 @@
 import { ColumnDef } from '@tanstack/react-table'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -21,16 +20,6 @@ export const columns: ColumnDef<any>[] = [
             <span className="font-medium">
                 {row.original.name}
             </span>
-        ),
-    },
-
-    {
-        accessorKey: 'type',
-        header: 'Tipe',
-        cell: ({ row }) => (
-            <Badge variant="outline">
-                {row.original.type ?? 'fixed'}
-            </Badge>
         ),
     },
 

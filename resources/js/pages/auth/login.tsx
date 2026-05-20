@@ -9,7 +9,8 @@ import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, router } from '@inertiajs/react';
+import { route } from 'ziggy-js';
 
 type Props = {
     status?: string;
@@ -95,6 +96,19 @@ export default function Login({
                             >
                                 {processing && <Spinner />}
                                 Log in
+                            </Button>
+                            <Button
+                                type="button"
+                                className="mt-4 w-full flex items-center justify-center"
+                                tabIndex={5}
+                                disabled={processing}
+                                onClick={() => window.location.href = route('auth.portal')}
+                            >
+                                <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                Masuk dengan Portal SSO
                             </Button>
                         </div>
 

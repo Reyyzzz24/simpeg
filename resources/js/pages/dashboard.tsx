@@ -1,3 +1,17 @@
+import { Head, Link, usePage } from '@inertiajs/react';
+import { format } from 'date-fns';
+import {
+    CalendarCheck,
+    Clock,
+    FileText,
+    GraduationCap,
+    Megaphone,
+    ShieldCheck,
+    UserCheck,
+    Users,
+    Wallet,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnnouncementCard } from '@/components/announcements/announcement-card';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
@@ -7,20 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CardContent } from '@/components/ui/card';
 import { useFirstName } from '@/hooks/use-first-name';
 import AppLayout from '@/layouts/app-layout';
-import { type SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { format } from 'date-fns';
-import {
-    CalendarCheck,
-    Clock,
-    FileText,
-    Megaphone,
-    ShieldCheck,
-    UserCheck,
-    Users,
-    Wallet,
-} from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import type { SharedData } from '@/types';
 
 const breadcrumbs = [{ title: 'Dashboard', href: '/dashboard' }];
 
@@ -63,11 +64,16 @@ const Dashboard = () => {
     const userRole = roleDisplay[auth.user.role] ?? 'Pengguna';
     const permissions = auth.permissions ?? [];
     const isManagementDashboard =
-        initialIsManagementDashboard || ['superadmin', 'admin'].includes(auth.user.role);
+        initialIsManagementDashboard ||
+        ['superadmin', 'admin'].includes(auth.user.role);
 
     const [stats, setStats] = useState<any>(
         initialStats ?? {
             total_users: 0,
+            total_employees: 0,
+            total_teachers: 0,
+            total_admins: 0,
+            total_superadmins: 0,
             total_present: 0,
             total_late: 0,
             total_absent: 0,
@@ -75,13 +81,17 @@ const Dashboard = () => {
     );
     const [recent, setRecent] = useState<any[]>(initialRecent ?? []);
     const [trend, setTrend] = useState<any[]>(initialTrend ?? []);
-    const [quickAccess, setQuickAccess] = useState<any>(initialQuickAccess ?? defaultQuickAccess);
+    const [quickAccess, setQuickAccess] = useState<any>(
+        initialQuickAccess ?? defaultQuickAccess,
+    );
     const [personalSummary, setPersonalSummary] = useState<any>(
         initialPersonalSummary ?? defaultPersonalSummary,
     );
     const [announcements] = useState<any[]>(initialAnnouncements ?? []);
     const [calendar, setCalendar] = useState<any[]>([]);
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+        new Date(),
+    );
 
     useEffect(() => {
         let mounted = true;
@@ -92,16 +102,23 @@ const Dashboard = () => {
                     headers: { Accept: 'application/json' },
                 });
 
-                if (!res.ok) return;
+                if (!res.ok) {
+                    return;
+                }
 
                 const json = await res.json();
-                if (!mounted) return;
+
+                if (!mounted) {
+                    return;
+                }
 
                 setStats((current: any) => json.stats ?? current);
                 setRecent(json.recent ?? []);
                 setTrend(json.trend ?? []);
                 setQuickAccess(json.quickAccess ?? defaultQuickAccess);
-                setPersonalSummary(json.personalSummary ?? defaultPersonalSummary);
+                setPersonalSummary(
+                    json.personalSummary ?? defaultPersonalSummary,
+                );
             } catch (e) {
                 console.error(e);
             }
@@ -118,7 +135,9 @@ const Dashboard = () => {
 
     useEffect(() => {
         const fetchCalendar = async () => {
-            const res = await fetch(`/dashboard/calendar?mode=month&user_id=${auth.user.id}`);
+            const res = await fetch(
+                `/dashboard/calendar?mode=month&user_id=${auth.user.id}`,
+            );
             const json = await res.json();
             setCalendar(json);
         };
@@ -130,12 +149,16 @@ const Dashboard = () => {
     }, [auth.user.id]);
 
     const statusMap = useMemo(() => {
-        return (calendar ?? []).reduce((acc: Record<string, string>, item: any) => {
-            if (item?.date && item?.status) {
-                acc[item.date] = item.status;
-            }
-            return acc;
-        }, {});
+        return (calendar ?? []).reduce(
+            (acc: Record<string, string>, item: any) => {
+                if (item?.date && item?.status) {
+                    acc[item.date] = item.status;
+                }
+
+                return acc;
+            },
+            {},
+        );
     }, [calendar]);
 
     const modifiers = useMemo(() => {
@@ -143,10 +166,13 @@ const Dashboard = () => {
         today.setHours(0, 0, 0, 0);
 
         return {
-            present: (date: Date) => statusMap[format(date, 'yyyy-MM-dd')] === 'present',
-            late: (date: Date) => statusMap[format(date, 'yyyy-MM-dd')] === 'late',
+            present: (date: Date) =>
+                statusMap[format(date, 'yyyy-MM-dd')] === 'present',
+            late: (date: Date) =>
+                statusMap[format(date, 'yyyy-MM-dd')] === 'late',
             alpha: (date: Date) =>
-                statusMap[format(date, 'yyyy-MM-dd')] === 'alpha' && date <= today,
+                statusMap[format(date, 'yyyy-MM-dd')] === 'alpha' &&
+                date <= today,
         };
     }, [statusMap]);
 
@@ -157,10 +183,15 @@ const Dashboard = () => {
     };
 
     const avgPresenceRate = useMemo(() => {
-        if (!trend?.length) return 0;
+        if (!trend?.length) {
+            return 0;
+        }
+
         return Math.round(
-            trend.reduce((acc: number, item: any) => acc + (item.present_rate ?? 0), 0) /
-            trend.length,
+            trend.reduce(
+                (acc: number, item: any) => acc + (item.present_rate ?? 0),
+                0,
+            ) / trend.length,
         );
     }, [trend]);
 
@@ -211,7 +242,11 @@ const Dashboard = () => {
                 <SectionHeader title="Pengumuman Internal" />
                 {can('announcements.view') && (
                     <Link href="/announcement">
-                        <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-blue-600 hover:text-blue-700"
+                        >
                             Lihat Semua
                         </Button>
                     </Link>
@@ -252,8 +287,12 @@ const Dashboard = () => {
                                     <CalendarCheck className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold">Absensi Saya</p>
-                                    <p className="text-xs text-gray-500">Buka halaman presensi pribadi</p>
+                                    <p className="text-sm font-semibold">
+                                        Absensi Saya
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        Buka halaman presensi pribadi
+                                    </p>
                                 </div>
                             </CardContent>
                         </DashboardCard>
@@ -268,7 +307,9 @@ const Dashboard = () => {
                                     <Wallet className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold">Slip Gaji</p>
+                                    <p className="text-sm font-semibold">
+                                        Slip Gaji
+                                    </p>
                                     <p className="text-xs text-gray-500">
                                         {quickAccess.salary_slip?.available
                                             ? `Periode ${quickAccess.salary_slip.period} tersedia`
@@ -288,8 +329,12 @@ const Dashboard = () => {
                                     <Megaphone className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold">Pengumuman</p>
-                                    <p className="text-xs text-gray-500">Lihat informasi terbaru sekolah</p>
+                                    <p className="text-sm font-semibold">
+                                        Pengumuman
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        Lihat informasi terbaru sekolah
+                                    </p>
                                 </div>
                             </CardContent>
                         </DashboardCard>
@@ -302,9 +347,12 @@ const Dashboard = () => {
                             <Clock className="h-5 w-5" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold">Status Kehadiran Hari Ini</p>
+                            <p className="text-sm font-semibold">
+                                Status Kehadiran Hari Ini
+                            </p>
                             <p className="text-xs text-gray-500">
-                                {quickAccess.work_report?.attendance_status ?? 'Belum ada data kehadiran'}
+                                {quickAccess.work_report?.attendance_status ??
+                                    'Belum ada data kehadiran'}
                             </p>
                         </div>
                     </CardContent>
@@ -326,8 +374,12 @@ const Dashboard = () => {
                                         <Users className="size-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-500">Total Pegawai</p>
-                                        <h4 className="text-2xl font-bold">{stats.total_users}</h4>
+                                        <p className="text-sm font-medium text-gray-500">
+                                            Total Pegawai
+                                        </p>
+                                        <h4 className="text-2xl font-bold">
+                                            {stats.total_employees ?? 0}
+                                        </h4>
                                     </div>
                                 </div>
                             </CardContent>
@@ -336,12 +388,16 @@ const Dashboard = () => {
                         <DashboardCard animation="fade-up" delay={0.4}>
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-4">
-                                    <div className="rounded-lg bg-green-100 p-3 text-green-600">
-                                        <UserCheck className="size-5" />
+                                    <div className="rounded-lg bg-emerald-100 p-3 text-emerald-600">
+                                        <GraduationCap className="size-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-500">Hadir Hari Ini</p>
-                                        <h4 className="text-2xl font-bold">{stats.total_present}</h4>
+                                        <p className="text-sm font-medium text-gray-500">
+                                            Total Guru
+                                        </p>
+                                        <h4 className="text-2xl font-bold">
+                                            {stats.total_teachers ?? 0}
+                                        </h4>
                                     </div>
                                 </div>
                             </CardContent>
@@ -354,8 +410,12 @@ const Dashboard = () => {
                                         <FileText className="size-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-500">Terlambat</p>
-                                        <h4 className="text-2xl font-bold">{stats.total_late}</h4>
+                                        <p className="text-sm font-medium text-gray-500">
+                                            Total Admin
+                                        </p>
+                                        <h4 className="text-2xl font-bold">
+                                            {stats.total_admins ?? 0}
+                                        </h4>
                                     </div>
                                 </div>
                             </CardContent>
@@ -365,11 +425,15 @@ const Dashboard = () => {
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-4">
                                     <div className="rounded-lg bg-rose-100 p-3 text-rose-600">
-                                        <Users className="size-5" />
+                                        <ShieldCheck className="size-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-500">Tidak Hadir</p>
-                                        <h4 className="text-2xl font-bold">{stats.total_absent}</h4>
+                                        <p className="text-sm font-medium text-gray-500">
+                                            Super Admin
+                                        </p>
+                                        <h4 className="text-2xl font-bold">
+                                            {stats.total_superadmins ?? 0}
+                                        </h4>
                                     </div>
                                 </div>
                             </CardContent>
@@ -380,7 +444,9 @@ const Dashboard = () => {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <SectionHeader title="Tren Kehadiran 7 Hari" />
-                        <span className="text-xs text-gray-500">Rata-rata hadir {avgPresenceRate}%</span>
+                        <span className="text-xs text-gray-500">
+                            Rata-rata hadir {avgPresenceRate}%
+                        </span>
                     </div>
                     <DashboardCard>
                         <CardContent className="space-y-4 p-6">
@@ -388,21 +454,28 @@ const Dashboard = () => {
                                 trend.map((item: any) => (
                                     <div key={item.date} className="space-y-1">
                                         <div className="flex items-center justify-between text-xs">
-                                            <span className="font-medium">{item.label}</span>
+                                            <span className="font-medium">
+                                                {item.label}
+                                            </span>
                                             <span className="text-gray-500">
-                                                {item.present}/{stats.total_users} hadir
+                                                {item.present}/
+                                                {stats.total_users} hadir
                                             </span>
                                         </div>
                                         <div className="h-2 w-full rounded-full bg-gray-100">
                                             <div
                                                 className="h-2 rounded-full bg-blue-500 transition-all"
-                                                style={{ width: `${Math.max(4, item.present_rate ?? 0)}%` }}
+                                                style={{
+                                                    width: `${Math.max(4, item.present_rate ?? 0)}%`,
+                                                }}
                                             />
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-sm text-gray-500">Belum ada data tren kehadiran.</p>
+                                <p className="text-sm text-gray-500">
+                                    Belum ada data tren kehadiran.
+                                </p>
                             )}
                         </CardContent>
                     </DashboardCard>
@@ -422,13 +495,21 @@ const Dashboard = () => {
                                             className="flex items-center justify-between border-b pb-2 last:border-b-0 last:pb-0"
                                         >
                                             <div>
-                                                <p className="text-sm font-semibold">{item.user}</p>
-                                                <p className="text-xs text-gray-500">{item.nip}</p>
+                                                <p className="text-sm font-semibold">
+                                                    {item.user}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    {item.nip}
+                                                </p>
                                             </div>
                                             <div className="text-right text-xs">
-                                                <p>Masuk: {item.jam_masuk ?? '-'}</p>
+                                                <p>
+                                                    Masuk:{' '}
+                                                    {item.jam_masuk ?? '-'}
+                                                </p>
                                                 <p className="text-gray-500">
-                                                    Pulang: {item.jam_pulang ?? '-'}
+                                                    Pulang:{' '}
+                                                    {item.jam_pulang ?? '-'}
                                                 </p>
                                             </div>
                                         </div>
@@ -465,8 +546,12 @@ const Dashboard = () => {
                                         <Clock className="size-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-500">Status Hari Ini</p>
-                                        <h4 className="text-lg font-bold">{personalSummary.today_status}</h4>
+                                        <p className="text-sm font-medium text-gray-500">
+                                            Status Hari Ini
+                                        </p>
+                                        <h4 className="text-lg font-bold">
+                                            {personalSummary.today_status}
+                                        </h4>
                                     </div>
                                 </div>
                             </CardContent>
@@ -479,8 +564,12 @@ const Dashboard = () => {
                                         <UserCheck className="size-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-500">Jam Masuk</p>
-                                        <h4 className="text-2xl font-bold">{personalSummary.jam_masuk ?? '-'}</h4>
+                                        <p className="text-sm font-medium text-gray-500">
+                                            Jam Masuk
+                                        </p>
+                                        <h4 className="text-2xl font-bold">
+                                            {personalSummary.jam_masuk ?? '-'}
+                                        </h4>
                                     </div>
                                 </div>
                             </CardContent>
@@ -493,8 +582,12 @@ const Dashboard = () => {
                                         <CalendarCheck className="size-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-500">Jam Pulang</p>
-                                        <h4 className="text-2xl font-bold">{personalSummary.jam_pulang ?? '-'}</h4>
+                                        <p className="text-sm font-medium text-gray-500">
+                                            Jam Pulang
+                                        </p>
+                                        <h4 className="text-2xl font-bold">
+                                            {personalSummary.jam_pulang ?? '-'}
+                                        </h4>
                                     </div>
                                 </div>
                             </CardContent>
@@ -507,8 +600,12 @@ const Dashboard = () => {
                                         <FileText className="size-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-500">Hadir Bulan Ini</p>
-                                        <h4 className="text-2xl font-bold">{personalSummary.monthly_present}</h4>
+                                        <p className="text-sm font-medium text-gray-500">
+                                            Hadir Bulan Ini
+                                        </p>
+                                        <h4 className="text-2xl font-bold">
+                                            {personalSummary.monthly_present}
+                                        </h4>
                                     </div>
                                 </div>
                             </CardContent>
@@ -527,16 +624,28 @@ const Dashboard = () => {
                     <DashboardCard>
                         <CardContent className="space-y-4 p-6 text-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-gray-500">Catatan bulan ini</span>
-                                <span className="font-semibold">{personalSummary.monthly_records}</span>
+                                <span className="text-gray-500">
+                                    Catatan bulan ini
+                                </span>
+                                <span className="font-semibold">
+                                    {personalSummary.monthly_records}
+                                </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-gray-500">Terlambat bulan ini</span>
-                                <span className="font-semibold">{personalSummary.monthly_late}</span>
+                                <span className="text-gray-500">
+                                    Terlambat bulan ini
+                                </span>
+                                <span className="font-semibold">
+                                    {personalSummary.monthly_late}
+                                </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-gray-500">Status hari ini</span>
-                                <span className="font-semibold">{personalSummary.today_status}</span>
+                                <span className="text-gray-500">
+                                    Status hari ini
+                                </span>
+                                <span className="font-semibold">
+                                    {personalSummary.today_status}
+                                </span>
                             </div>
                         </CardContent>
                     </DashboardCard>
@@ -556,7 +665,11 @@ const Dashboard = () => {
                     title={`Halo, ${firstName}!`}
                     subtitle={`${userRole} — Sistem Informasi Kepegawaian SMKKPDM`}
                     description={headerDescription}
-                    gradient={isManagementDashboard ? 'bg-linear-to-r from-blue-600 to-indigo-500' : 'bg-linear-to-r from-emerald-600 to-blue-500'}
+                    gradient={
+                        isManagementDashboard
+                            ? 'bg-linear-to-r from-blue-600 to-indigo-500'
+                            : 'bg-linear-to-r from-emerald-600 to-blue-500'
+                    }
                     icon={
                         isManagementDashboard ? (
                             <ShieldCheck className="size-20" />
@@ -564,10 +677,16 @@ const Dashboard = () => {
                             <UserCheck className="size-20" />
                         )
                     }
-                    shadowColor={isManagementDashboard ? 'shadow-blue-200/50' : 'shadow-emerald-200/50'}
+                    shadowColor={
+                        isManagementDashboard
+                            ? 'shadow-blue-200/50'
+                            : 'shadow-emerald-200/50'
+                    }
                 />
 
-                {isManagementDashboard ? managementDashboard : personalDashboard}
+                {isManagementDashboard
+                    ? managementDashboard
+                    : personalDashboard}
             </div>
         </>
     );

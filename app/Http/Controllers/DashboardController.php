@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Models\User;
 use App\Models\Announcement;
+use App\Models\Employee;
 use App\Models\Payroll;
+use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -33,6 +35,10 @@ class DashboardController extends Controller
 
         return [
             'total_users' => $totalUsers,
+            'total_employees' => Employee::count(),
+            'total_teachers' => Teacher::count(),
+            'total_admins' => User::where('role', 'admin')->count(),
+            'total_superadmins' => User::where('role', 'superadmin')->count(),
             'total_present' => $totalPresent,
             'total_late' => $totalLate,
             'total_absent' => max(0, $totalUsers - $totalPresent),

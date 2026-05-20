@@ -1,6 +1,5 @@
 import { Head, router } from '@inertiajs/react';
 import {
-    Users,
     Clock,
     AlertTriangle,
     QrCode,
@@ -9,7 +8,10 @@ import {
     Download,
     Plus,
     Filter,
-    Settings,
+    CheckCircle2,
+    XCircle,
+    FileText,
+    HeartPulse,
 } from 'lucide-react';
 import { useState } from 'react';
 import { route } from 'ziggy-js';
@@ -120,16 +122,17 @@ export default function PresenceIndex({
                 </PageHeader>
 
                 <div className="grid gap-6 lg:grid-cols-12">
-
                     {/* Status Waktu (Kiri) */}
                     <DashboardCard className="lg:col-span-4">
                         <CardContent className="p-6">
                             <div className="mb-6 flex items-center justify-between">
-                                <h3 className="font-bold text-gray-700">Status Waktu</h3>
+                                <h3 className="font-bold text-gray-700">
+                                    Status Waktu
+                                </h3>
                                 <Button
                                     variant="neutral"
                                     size="sm"
-                                    className="bg-black text-white hover:bg-gray-800 rounded-full px-4"
+                                    className="rounded-full bg-black px-4 text-white hover:bg-gray-800"
                                     onClick={() => setIsSetTimeOpen(true)}
                                 >
                                     <Clock className="mr-2 size-3" />
@@ -139,15 +142,21 @@ export default function PresenceIndex({
 
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between border-b pb-2">
-                                    <span className="font-medium text-gray-600">Masuk</span>
+                                    <span className="font-medium text-gray-600">
+                                        Masuk
+                                    </span>
                                     <span className="font-mono text-gray-500">
-                                        {timeWindow?.masuk_start ?? '06:00'} - {timeWindow?.masuk_end ?? '08:00'}
+                                        {timeWindow?.masuk_start ?? '06:00'} -{' '}
+                                        {timeWindow?.masuk_end ?? '08:00'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="font-medium text-gray-600">Pulang</span>
+                                    <span className="font-medium text-gray-600">
+                                        Pulang
+                                    </span>
                                     <span className="font-mono text-gray-500">
-                                        {timeWindow?.pulang_start ?? '16:00'} - {timeWindow?.pulang_end ?? '18:00'}
+                                        {timeWindow?.pulang_start ?? '16:00'} -{' '}
+                                        {timeWindow?.pulang_end ?? '18:00'}
                                     </span>
                                 </div>
                             </div>
@@ -156,44 +165,64 @@ export default function PresenceIndex({
 
                     {/* Statistik Kehadiran (Kanan) */}
                     <DashboardCard className="lg:col-span-8">
-                        <CardContent className="grid grid-cols-2 p-0 md:grid-cols-4 divide-x divide-gray-100">
-                            {/* Total Siswa/Pegawai */}
-                            <div className="flex flex-col gap-1 p-6">
-                                <p className="text-sm font-medium text-gray-500">Total Pegawai</p>
-                                <div className="flex items-center gap-2">
-                                    <h3 className="text-3xl font-bold text-gray-900">{stats.total_employees ?? 0}</h3>
-                                    <Users className="size-5 text-gray-400" />
-                                </div>
-                            </div>
-
-                            {/* Hadir */}
+                        <CardContent className="grid grid-cols-2 divide-x divide-y divide-gray-100 p-0 md:grid-cols-5 md:divide-y-0">
                             <div className="flex flex-col gap-1 bg-green-50/30 p-6">
-                                <p className="text-sm font-medium text-green-600">Hadir</p>
+                                <p className="text-sm font-medium text-green-600">
+                                    Hadir
+                                </p>
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-3xl font-bold text-green-600">{stats.total_present}</h3>
-                                    <div className="flex size-5 items-center justify-center rounded-full border border-green-600">
-                                        <span className="text-[10px] text-green-600">✓</span>
-                                    </div>
+                                    <h3 className="text-3xl font-bold text-green-600">
+                                        {stats.total_present ?? 0}
+                                    </h3>
+                                    <CheckCircle2 className="size-5 text-green-600" />
                                 </div>
                             </div>
 
-                            {/* Izin/Sakit (Late as placeholder) */}
                             <div className="flex flex-col gap-1 p-6">
-                                <p className="text-sm font-medium text-gray-500">Terlambat</p>
+                                <p className="text-sm font-medium text-gray-500">
+                                    Terlambat
+                                </p>
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-3xl font-bold text-gray-900">{stats.total_late}</h3>
+                                    <h3 className="text-3xl font-bold text-gray-900">
+                                        {stats.total_late ?? 0}
+                                    </h3>
                                     <AlertTriangle className="size-5 text-orange-400" />
                                 </div>
                             </div>
 
-                            {/* Alpha / Belum Absen */}
                             <div className="flex flex-col gap-1 p-6">
-                                <p className="text-sm font-medium text-red-500">Alpha</p>
+                                <p className="text-sm font-medium text-red-500">
+                                    Alpha
+                                </p>
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-3xl font-bold text-red-600">{stats.total_missing}</h3>
-                                    <div className="flex size-5 items-center justify-center rounded-full border border-red-600 text-red-600">
-                                        <span className="text-[10px]">✕</span>
-                                    </div>
+                                    <h3 className="text-3xl font-bold text-red-600">
+                                        {stats.total_alpha ?? 0}
+                                    </h3>
+                                    <XCircle className="size-5 text-red-600" />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1 p-6">
+                                <p className="text-sm font-medium text-blue-600">
+                                    Izin
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-3xl font-bold text-blue-600">
+                                        {stats.total_izin ?? 0}
+                                    </h3>
+                                    <FileText className="size-5 text-blue-500" />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1 p-6">
+                                <p className="text-sm font-medium text-purple-600">
+                                    Sakit
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-3xl font-bold text-purple-600">
+                                        {stats.total_sakit ?? 0}
+                                    </h3>
+                                    <HeartPulse className="size-5 text-purple-500" />
                                 </div>
                             </div>
                         </CardContent>
