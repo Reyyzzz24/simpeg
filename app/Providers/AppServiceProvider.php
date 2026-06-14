@@ -10,6 +10,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use App\Socialite\PortalProvider;
 use Laravel\Socialite\Facades\Socialite;
+use App\Models\UserPosition;
+use App\Observers\UserPositionObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // Register model observers
+        UserPosition::observe(UserPositionObserver::class);
 
         // 2. Paksa HTTPS jika aplikasi berjalan di lingkungan produksi
         if (app()->isProduction()) {

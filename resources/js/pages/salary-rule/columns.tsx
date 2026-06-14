@@ -83,7 +83,14 @@ export const getColumns = (opts: any): ColumnDef<any>[] => [
                             {c.amount_type === 'formula'
                                 ? c.formula_type === 'jam_kerja'
                                     ? `Formula Jam Kerja / ${c.formula_interval_minutes ?? 30} menit`
-                                    : 'Formula Hadir'
+                                    : c.formula_type === 'lembur'
+                                      ? 'Formula Lembur'
+                                      : c.formula_type === 'jam_mengajar_teori'
+                                        ? 'Formula Jam Teori'
+                                        : c.formula_type ===
+                                            'jam_mengajar_praktik'
+                                          ? 'Formula Jam Praktik'
+                                          : 'Formula Hadir'
                                 : c.amount_type}
                         </Badge>
                     ))}

@@ -67,12 +67,27 @@ class User extends Authenticatable
     }
     public function positions()
     {
-        return $this->belongsToMany(
-            Position::class,
-            'user_positions',
-            'user_id',
-            'position_id'
-        );
+        // Return a query builder for positions referenced by the user's user_positions.position_ids
+        $up = \App\Models\UserPosition::where('user_id', $this->id)->first();
+        $ids = $up->position_ids ?? [];
+
+        return \App\Models\Position::whereIn('id', $ids);
+    }
+
+    public function getPositionsAttribute()
+    {
+        $up = \App\Models\UserPosition::where('user_id', $this->id)->first();
+        if (!$up || empty($up->position_ids)) {
+            return collect();
+        }
+
+        return \App\Models\Position::whereIn('id', $up->position_ids)->get();
+    }
+
+    public function getPositionIdsAttribute()
+    {
+        $up = \App\Models\UserPosition::where('user_id', $this->id)->first();
+        return $up->position_ids ?? [];
     }
 
     public function roles(): BelongsToMany

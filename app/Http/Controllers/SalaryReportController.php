@@ -22,18 +22,25 @@ class SalaryReportController extends Controller
             ->latest('periode')
             ->latest('id')
             ->get()
-            ->map(fn (Payroll $payroll) => [
-                'id' => $payroll->id,
-                'nama' => $payroll->user->name ?? '-',
-                'role' => $payroll->user->role ?? '-',
-                'periode' => $payroll->periode,
-                'total_gaji' => (float) $payroll->total_gaji,
-                'total_adjustment' => (float) $payroll->adjustments->sum('amount'),
-                'details' => $payroll->details->map(fn ($detail) => [
-                    'komponen' => $detail->component->name ?? '-',
-                    'amount' => (float) $detail->amount,
-                ]),
-            ]);
+            ->map(function (Payroll $payroll) {
+                $adjustments = $payroll->adjustments
+                    ->where('periode', $payroll->periode)
+                    ->values();
+
+                return [
+                    'id' => $payroll->id,
+                    'nama' => $payroll->user->name ?? '-',
+                    'role' => $payroll->user->role ?? '-',
+                    'jabatan' => implode(', ', $payroll->user->positions()->pluck('name')->toArray()),
+                    'periode' => $payroll->periode,
+                    'total_gaji' => (float) $payroll->total_gaji,
+                    'total_adjustment' => (float) $adjustments->sum('amount'),
+                    'details' => $payroll->details->map(fn ($detail) => [
+                        'komponen' => $detail->component->name ?? '-',
+                        'amount' => (float) $detail->amount,
+                    ]),
+                ];
+            });
 
         return Inertia::render('report/salaryreport/index', [
             'data' => $payrolls,

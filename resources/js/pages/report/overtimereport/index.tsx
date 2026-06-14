@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { CheckCircle2, Clock, Timer } from 'lucide-react';
+import { CheckCircle2, Clock, Filter, Timer, Download } from 'lucide-react';
 import { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
@@ -165,7 +165,38 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
                                     variant="outline"
                                     onClick={handleFilter}
                                 >
+                                    <Filter className="mr-2 size-4" />
                                     Filter
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const params = new URLSearchParams({
+                                            start_date: start,
+                                            end_date: end,
+                                            status,
+                                        });
+
+                                        window.location.href = `/report/overtime/export?${params.toString()}`;
+                                    }}
+                                >
+                                    <Download className="mr-2 size-4" />
+                                    Export CSV
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const params = new URLSearchParams({
+                                            start_date: start,
+                                            end_date: end,
+                                            status,
+                                        });
+
+                                        window.open(`/report/overtime/print?${params.toString()}`, '_blank');
+                                    }}
+                                >
+                                    <Download className="mr-2 size-4" />
+                                    Print / PDF
                                 </Button>
                             </div>
                         }

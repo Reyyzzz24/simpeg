@@ -44,7 +44,7 @@ class PresentReportController extends Controller
                     $jamKerja = 0;
                 }
 
-                return [
+                $row = [
                     'id' => $item->id,
                     'nama' => $item->user->name ?? '-',
                     'role' => $item->user->role ?? '-',
@@ -54,6 +54,19 @@ class PresentReportController extends Controller
                     'status_disiplin' => $item->status_disiplin,
                     'jam_kerja' => round($jamKerja, 2),
                 ];
+
+                // Jika user adalah guru, sertakan field pengajaran dari tabel attendances
+                if (isset($item->user) && ($item->user->role === 'guru')) {
+                    $row['total_jam_ajar'] = $item->total_jam_ajar;
+                    $row['jenis_ajar'] = $item->jenis_ajar;
+                    $row['jam_teori'] = $item->jam_teori;
+                    $row['jam_praktik'] = $item->jam_praktik;
+                    $row['ada_piket'] = (bool) $item->ada_piket;
+                    $row['selisih_jam_ajar_menit'] = $item->selisih_jam_ajar_menit;
+                    $row['status_validasi_ajar'] = $item->status_validasi_ajar;
+                }
+
+                return $row;
             });
 
         return Inertia::render('report/presencereport/index', [

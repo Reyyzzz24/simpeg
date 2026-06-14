@@ -17,7 +17,13 @@ import {
 } from '@/components/ui/select';
 
 type AmountType = 'fixed' | 'percentage' | 'formula';
-type FormulaType = 'hadir' | 'jam_kerja';
+type FormulaType =
+    | 'hadir'
+    | 'jam_kerja'
+    | 'lembur'
+    | 'jam_mengajar_teori'
+    | 'jam_mengajar_praktik'
+    | 'piket';
 
 type RuleComponentForm = {
     id: number;
@@ -117,7 +123,19 @@ export default function SalaryRuleEditModal({
             ...prev,
             components: prev.components.map((component) =>
                 component.id === id
-                    ? { ...component, [key]: value }
+                    ? {
+                          ...component,
+                          [key]: value,
+                          ...(key === 'amount_type' && value === 'formula'
+                              ? {
+                                    formula_type:
+                                        component.formula_type ?? 'hadir',
+                                    formula_interval_minutes:
+                                        component.formula_interval_minutes ||
+                                        30,
+                                }
+                              : {}),
+                      }
                     : component,
             ),
         }));
@@ -305,6 +323,16 @@ export default function SalaryRuleEditModal({
                                                         <SelectItem value="jam_kerja">
                                                             Jam Kerja
                                                         </SelectItem>
+                                                        <SelectItem value="lembur">
+                                                            Lembur
+                                                        </SelectItem>
+                                                        <SelectItem value="jam_mengajar_teori">
+                                                            Jam Mengajar Teori
+                                                        </SelectItem>
+                                                        <SelectItem value="jam_mengajar_praktik">
+                                                            Jam Mengajar Praktik
+                                                        </SelectItem>
+                                                        <SelectItem value="piket">Piket</SelectItem>
                                                     </SelectContent>
                                                 </Select>
 
@@ -333,10 +361,17 @@ export default function SalaryRuleEditModal({
                                                 />
                                             </div>
                                             <p className="text-[10px] text-blue-700">
-                                                {component.formula_type ===
-                                                'jam_kerja'
-                                                    ? 'Total menit kerja dibagi interval menit lalu dikali nominal.'
-                                                    : "Nominal dikali total status 'hadir' di absensi."}
+                                                                                                {component.formula_type === 'jam_kerja'
+                                                                                                        ? 'Total menit kerja dibagi interval menit lalu dikali nominal.'
+                                                                                                        : component.formula_type === 'lembur'
+                                                                                                            ? 'Nominal dikali jumlah lembur yang disetujui di periode ini.'
+                                                                                                            : component.formula_type === 'jam_mengajar_teori'
+                                                                                                                ? 'Nominal dikali total jam teori per bulan dari absensi guru.'
+                                                                                                                : component.formula_type === 'jam_mengajar_praktik'
+                                                                                                                    ? 'Nominal dikali total jam praktik per bulan dari absensi guru.'
+                                                                                                                    : component.formula_type === 'piket'
+                                                                                                                        ? 'Nominal dikali frekuensi piket (jumlah hari ada_piket = true) di periode ini.'
+                                                                                                                        : "Nominal dikali total status 'hadir' di absensi."}
                                             </p>
                                         </div>
                                     )}

@@ -20,7 +20,6 @@ class Payroll extends Model
 
     public function adjustments()
     {
-        return $this->hasMany(PayrollAdjustment::class, 'user_id', 'user_id')
-            ->whereColumn('periode', 'periode');
+        return $this->hasMany(PayrollAdjustment::class, 'user_id', 'user_id');
     }
 }

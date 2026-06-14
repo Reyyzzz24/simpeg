@@ -17,10 +17,22 @@ class Attendance extends Model
         'status_disiplin',
         'total_jam_ajar',
         'jenis_ajar',
+        'jam_teori',
+        'jam_praktik',
+        'ada_piket',
         'durasi_hadir_menit',
         'selisih_jam_ajar_menit',
         'status_validasi_ajar',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'jam_teori' => 'float',
+            'jam_praktik' => 'float',
+            'ada_piket' => 'boolean',
+        ];
+    }
 
     public function user(): BelongsTo
     {

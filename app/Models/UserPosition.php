@@ -6,19 +6,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserPosition extends Model
 {
-    protected $fillable = ['user_id', 'position_id'];
+    protected $fillable = ['user_id', 'position_ids'];
+
+    protected $casts = [
+        'position_ids' => 'array',
+    ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function position()
+    // helper to retrieve Position models for the saved ids
+    public function getPositionsAttribute()
     {
-        return $this->belongsTo(Position::class);
-    }
-    public function allowances()
-    {
-        return $this->hasMany(PositionAllowance::class, 'position_id');
+        if (empty($this->position_ids)) {
+            return collect();
+        }
+
+        return Position::whereIn('id', $this->position_ids)->get();
     }
 }

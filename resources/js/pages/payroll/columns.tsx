@@ -1,5 +1,5 @@
 import type { ColumnDef, Row } from '@tanstack/react-table';
-import { MoreHorizontal, Eye, Pencil, Trash2, Settings2, Edit } from 'lucide-react';
+import { MoreHorizontal, Eye, Trash2, Settings2, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -120,12 +120,16 @@ export function getPayrollColumns(opts?: {
                             <DropdownMenuLabel>Aksi</DropdownMenuLabel>
                             <DropdownMenuSeparator />
 
-                            <DropdownMenuItem onClick={() => opts?.onDetail?.(record)}>
+                            <DropdownMenuItem
+                                onClick={() => opts?.onDetail?.(record)}
+                            >
                                 <Eye className="mr-2 h-4 w-4" />
                                 Detail
                             </DropdownMenuItem>
 
-                            <DropdownMenuItem onClick={() => opts?.onRegenerate?.(record)}>
+                            <DropdownMenuItem
+                                onClick={() => opts?.onRegenerate?.(record)}
+                            >
                                 <Settings2 className="mr-2 h-4 w-4" />
                                 Re-generate Gaji
                             </DropdownMenuItem>
@@ -135,14 +139,22 @@ export function getPayrollColumns(opts?: {
                             {adjustments.length > 0 ? (
                                 <>
                                     <DropdownMenuItem
-                                        onClick={() => opts?.onEditAdjustment?.(adjustments)}
+                                        onClick={() =>
+                                            opts?.onEditAdjustment?.(
+                                                adjustments,
+                                            )
+                                        }
                                     >
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit Adjustment
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
-                                        onClick={() => opts?.onDeleteAdjustment?.(adjustments)}
+                                        onClick={() =>
+                                            opts?.onDeleteAdjustment?.(
+                                                adjustments,
+                                            )
+                                        }
                                         className="text-red-600 focus:text-red-600"
                                     >
                                         <Trash2 className="mr-2 h-4 w-4" />
@@ -150,7 +162,10 @@ export function getPayrollColumns(opts?: {
                                     </DropdownMenuItem>
                                 </>
                             ) : (
-                                <DropdownMenuItem disabled className="text-muted-foreground">
+                                <DropdownMenuItem
+                                    disabled
+                                    className="text-muted-foreground"
+                                >
                                     Tidak ada adjustment
                                 </DropdownMenuItem>
                             )}

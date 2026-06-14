@@ -102,15 +102,44 @@ export default function DetailPresenceModal({
                                 Jam Ajar
                             </p>
                             <p className="text-sm font-bold text-[#334155]">
-                                {record.total_jam_ajar
-                                    ? `${record.total_jam_ajar} jam`
-                                    : '-'}
-                                {record.jenis_ajar &&
-                                record.jenis_ajar !== 'none'
-                                    ? ` (${record.jenis_ajar})`
-                                    : ''}
+                                {record.jam_teori || record.jam_praktik ? (
+                                    <>
+                                        {record.jam_teori
+                                            ? `Teori ${record.jam_teori}j`
+                                            : null}
+                                        {record.jam_teori && record.jam_praktik
+                                            ? ' + '
+                                            : null}
+                                        {record.jam_praktik
+                                            ? `Praktik ${record.jam_praktik}j`
+                                            : null}
+                                        {record.total_jam_ajar
+                                            ? ` (${record.total_jam_ajar}j total)`
+                                            : null}
+                                    </>
+                                ) : record.total_jam_ajar ? (
+                                    `${record.total_jam_ajar} jam${
+                                        record.jenis_ajar &&
+                                        record.jenis_ajar !== 'none'
+                                            ? ` (${record.jenis_ajar.replace('_', ' & ')})`
+                                            : ''
+                                    }`
+                                ) : (
+                                    '-'
+                                )}
                             </p>
                         </div>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold tracking-widest text-[#94a3b8] uppercase">
+                                Piket
+                            </p>
+                            <p className="text-sm font-bold text-[#334155]">
+                                {record.ada_piket ? 'Ya' : 'Tidak'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <p className="text-[10px] font-bold tracking-widest text-[#94a3b8] uppercase">
                                 Validasi
@@ -119,17 +148,17 @@ export default function DetailPresenceModal({
                                 {record.status_validasi_ajar ?? '-'}
                             </p>
                         </div>
-                    </div>
-
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-bold tracking-widest text-[#94a3b8] uppercase">
-                            Selisih Durasi
-                        </p>
-                        <p className="text-sm font-bold text-[#334155]">
-                            {typeof record.selisih_jam_ajar_menit === 'number'
-                                ? `${Math.trunc(record.selisih_jam_ajar_menit / 60)} jam ${Math.abs(record.selisih_jam_ajar_menit % 60)} menit`
-                                : '-'}
-                        </p>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold tracking-widest text-[#94a3b8] uppercase">
+                                Selisih Durasi
+                            </p>
+                            <p className="text-sm font-bold text-[#334155]">
+                                {typeof record.selisih_jam_ajar_menit ===
+                                'number'
+                                    ? `${Math.trunc(record.selisih_jam_ajar_menit / 60)} jam ${Math.abs(record.selisih_jam_ajar_menit % 60)} menit`
+                                    : '-'}
+                            </p>
+                        </div>
                     </div>
                 </div>
                 <div className="mt-4 flex justify-end">

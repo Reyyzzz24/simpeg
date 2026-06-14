@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\TimeSettingController;
+use App\Http\Controllers\LocationSettingController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PresentReportController;
 use App\Http\Controllers\SalaryReportController;
 use App\Http\Controllers\OvertimeReportController;
+use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\UserController;
@@ -46,9 +48,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/self/history', [PresenceController::class, 'selfHistory'])->name('self.history');
         Route::post('/self/face', [PresenceController::class, 'markFacePresence'])->name('self.face');
         Route::post('/self/face/register', [PresenceController::class, 'registerFace'])->name('self.face.register');
-        Route::get('/self/teacher-checkout', [PresenceController::class, 'teacherCheckout'])->name('teacher-checkout');
-        Route::post('/self/teacher-checkout', [PresenceController::class, 'storeTeacherCheckout'])->name('teacher-checkout.store');
+        Route::post('/face', [PresenceController::class, 'markAdminFacePresence'])->middleware('permission:presence.create')->name('face');
+        Route::get('/teacher-checkout', [PresenceController::class, 'teacherCheckout'])->name('teacher-checkout');
+        Route::post('/teacher-checkout', [PresenceController::class, 'storeTeacherCheckout'])->name('teacher-checkout.store');
+        Route::get('/self/teacher-checkout', fn () => redirect()->route('presence.teacher-checkout'));
+        Route::post('/self/teacher-checkout', [PresenceController::class, 'storeTeacherCheckout']);
         Route::put('/time-window', [TimeSettingController::class, 'update'])->middleware('permission:time-settings.edit')->name('time-window.update');
+        Route::put('/location-setting', [LocationSettingController::class, 'update'])->middleware('permission:presence.edit')->name('location-setting.update');
         Route::post('/store', [PresenceController::class, 'store'])->middleware('permission:presence.create')->name('store');
         Route::post('/mark', [PresenceController::class, 'markPresence'])->middleware('permission:presence.create')->name('mark');
 
@@ -63,6 +69,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/presence', [PresentReportController::class, 'index'])->middleware('permission:reports.view')->name('presence.index');
         Route::get('/salary', [SalaryReportController::class, 'index'])->middleware('permission:reports.view')->name('salary.index');
         Route::get('/overtime', [OvertimeReportController::class, 'index'])->middleware('permission:reports.view')->name('overtime.index');
+        // Export / print routes
+        Route::get('/overtime/export', [ReportExportController::class, 'overtimeCsv'])->middleware('permission:reports.view')->name('overtime.export');
+        Route::get('/overtime/print', [ReportExportController::class, 'overtimePrint'])->middleware('permission:reports.view')->name('overtime.print');
+
+        Route::get('/salary/export', [ReportExportController::class, 'salaryCsv'])->middleware('permission:reports.view')->name('salary.export');
+        Route::get('/salary/print', [ReportExportController::class, 'salaryPrint'])->middleware('permission:reports.view')->name('salary.print');
+
+        Route::get('/presence/export', [ReportExportController::class, 'presenceCsv'])->middleware('permission:reports.view')->name('presence.export');
+        Route::get('/presence/print', [ReportExportController::class, 'presencePrint'])->middleware('permission:reports.view')->name('presence.print');
     });
 
     Route::prefix('overtime')->name('overtime.')->group(function () {
@@ -117,7 +132,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('payroll-adjustments')->name('adjustments.')->group(function () {
         Route::get('/{adjustment}', [PayrollAdjustmentController::class, 'show'])->name('show');
         Route::post('/bulk-store', [PayrollAdjustmentController::class, 'bulkStore'])->name('bulkStore');
-        Route::post('/update', [PayrollAdjustmentController::class, 'update'])->name('update');
+        Route::put('/{id}', [PayrollAdjustmentController::class, 'update'])->name('update');
         Route::delete('/{id}', [PayrollAdjustmentController::class, 'destroy'])->name('destroy');
     });
 

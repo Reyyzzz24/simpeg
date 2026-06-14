@@ -21,8 +21,13 @@ type Props = {
     todayPresence: TodayPresence;
     user: SelfPresenceUser;
     teacherCheckoutMode?: boolean;
+    teacherCheckoutUserId?: number;
+    teacherCheckoutReturnTo?: string;
     historyMode?: boolean;
     selfPresences?: SelfPresence[];
+    locationSetting?: {
+        enabled?: boolean;
+    };
 };
 
 const breadcrumbs = [
@@ -34,8 +39,11 @@ export default function EmployeePresenceIndex({
     todayPresence,
     user,
     teacherCheckoutMode = false,
+    teacherCheckoutUserId,
+    teacherCheckoutReturnTo = '/presence/self',
     historyMode = false,
     selfPresences = [],
+    locationSetting,
 }: Props) {
     const { flash } = usePage<any>().props;
     const [type, setType] = useState<PresenceType>(
@@ -57,7 +65,12 @@ export default function EmployeePresenceIndex({
 
     if (teacherCheckoutMode) {
         return (
-            <TeacherCheckoutView user={user} todayPresence={todayPresence} />
+            <TeacherCheckoutView
+                user={user}
+                todayPresence={todayPresence}
+                targetUserId={teacherCheckoutUserId}
+                returnTo={teacherCheckoutReturnTo}
+            />
         );
     }
 
@@ -69,7 +82,7 @@ export default function EmployeePresenceIndex({
                 <PageHeader
                     title="Absensi Saya"
                     subtitle={`${user.name} - ${user.role}`}
-                    description="Lakukan absensi dengan scan QR atau verifikasi wajah melalui kamera perangkat."
+                    description="Daftarkan wajah untuk absensi via Face Gate admin, atau absen dengan scan QR."
                     gradient="bg-linear-to-r from-sky-600 to-emerald-500"
                     icon={<Camera className="size-20 text-white" />}
                 />
@@ -81,22 +94,28 @@ export default function EmployeePresenceIndex({
 
                 <FlashMessage success={flash?.success} error={flash?.error} />
 
-                <div className="grid gap-6 xl:grid-cols-[1fr_1fr_360px]">
-                    <QrScanPanel />
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 items-start">
 
-                    <FaceRecognitionPanel
-                        type={type}
-                        faceRegistered={user.face_registered}
-                        faceRegisteredAt={user.face_registered_at}
-                        isTeacherCheckout={isTeacher && type === 'pulang'}
-                    />
+                    <div className="w-full">
+                        <QrScanPanel />
+                    </div>
 
-                    <AttendanceActionPanel
-                        type={type}
-                        setType={setType}
-                        isTeacher={isTeacher}
-                        todayPresence={todayPresence}
-                    />
+                    <div className="w-full">
+                        <FaceRecognitionPanel
+                            faceRegistered={user.face_registered}
+                            faceRegisteredAt={user.face_registered_at}
+                        />
+                    </div>
+
+                    <div className="w-full">
+                        <AttendanceActionPanel
+                            type={type}
+                            setType={setType}
+                            isTeacher={isTeacher}
+                            todayPresence={todayPresence}
+                        />
+                    </div>
+
                 </div>
             </div>
         </>

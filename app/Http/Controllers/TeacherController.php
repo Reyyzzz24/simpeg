@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Position;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Schema;
 
 class TeacherController extends Controller
 {
@@ -16,6 +17,9 @@ class TeacherController extends Controller
             ->orderBy('nama', 'asc')
             ->get()
             ->map(function ($item) {
+                // Ambil data posisi dari method baru
+                $positions = $item->getPositions();
+
                 return [
                     'id' => $item->id,
                     'user_id' => $item->user_id,
@@ -25,8 +29,16 @@ class TeacherController extends Controller
                     'nuptk' => $item->nuptk,
                     'sub_role' => $item->sub_role,
                     'status_kerja' => $item->status_kerja ?? 'tetap',
-                    'position_id' => $item->position_id,
-                    'jabatan' => $item->position->name ?? '-',
+                    'position_ids' => $positions->pluck('id')->map(function ($v) {
+                        return (string) $v;
+                    })->toArray(),
+                    'positions' => $positions->map(function ($p) {
+                        return ['id' => $p->id, 'name' => $p->name];
+                    }),
+
+                    // Jabatan diambil dari posisi pertama atau sesuai kebutuhan
+                    'jabatan' => $positions->first()->name ?? '-',
+
                     'tugas_tambahan' => $item->tugas_tambahan,
                     'mata_pelajaran' => $item->mata_pelajaran,
                     'pendidikan_terakhir' => $item->pendidikan_terakhir,
@@ -60,20 +72,29 @@ class TeacherController extends Controller
             'status_kerja' => ['required', Rule::in(Teacher::STATUS_KERJA_OPTIONS)],
         ]);
 
-        Teacher::create([
+        $createData = [
             'user_id' => $validated['user_id'],
             'nama' => $validated['nama'],
             'tempat_tanggal_lahir' => $validated['tempat_tanggal_lahir'] ?? null,
             'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
             'nuptk' => $validated['nuptk'] ?? null,
-            'position_id' => $validated['position_id'] ?? null,
             'tugas_tambahan' => $validated['tugas_tambahan'] ?? null,
             'mata_pelajaran' => $validated['mata_pelajaran'] ?? null,
             'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
             'tmt_sekolah' => $validated['tmt_sekolah'] ?? null,
             'sub_role' => $validated['sub_role'] ?? null,
             'status_kerja' => $validated['status_kerja'],
-        ]);
+        ];
+
+        if (Schema::hasColumn('teachers', 'position_id')) {
+            $createData['position_id'] = $validated['position_id'] ?? null;
+        }
+
+        if (Schema::hasColumn('teachers', 'position_ids')) {
+            $createData['position_ids'] = $validated['position_ids'] ?? null;
+        }
+
+        Teacher::create($createData);
 
         return back()->with('success', 'Data guru berhasil ditambahkan');
     }
@@ -88,31 +109,49 @@ class TeacherController extends Controller
             'sub_role' => 'nullable|string',
             'status_kerja' => ['required', Rule::in(Teacher::STATUS_KERJA_OPTIONS)],
             'position_id' => 'nullable|exists:positions,id',
+            'position_ids' => 'nullable|array',
+            'position_ids.*' => 'exists:positions,id',
             'tugas_tambahan' => 'nullable|string|max:255',
             'mata_pelajaran' => 'nullable|string|max:255',
             'pendidikan_terakhir' => 'nullable|string|max:255',
             'tmt_sekolah' => 'nullable|date',
         ]);
 
-        $guru->update([
+        $updateData = [
             'nama' => $validated['nama'],
             'tempat_tanggal_lahir' => $validated['tempat_tanggal_lahir'] ?? null,
             'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
             'nuptk' => $validated['nuptk'] ?? null,
             'sub_role' => $validated['sub_role'] ?? null,
             'status_kerja' => $validated['status_kerja'],
-            'position_id' => $validated['position_id'] ?? null,
             'tugas_tambahan' => $validated['tugas_tambahan'] ?? null,
             'mata_pelajaran' => $validated['mata_pelajaran'] ?? null,
             'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
             'tmt_sekolah' => $validated['tmt_sekolah'] ?? null,
-        ]);
+        ];
+
+        if (Schema::hasColumn('teachers', 'position_ids')) {
+            $updateData['position_ids'] = $validated['position_ids'] ?? null;
+        }
+
+        if (Schema::hasColumn('teachers', 'position_id')) {
+            $updateData['position_id'] = $validated['position_id'] ?? (isset($validated['position_ids'][0]) ? $validated['position_ids'][0] : null);
+        }
+
+        $guru->update($updateData);
 
         // sync user name
         if ($guru->user) {
             $guru->user->update([
                 'name' => $validated['nama']
             ]);
+        }
+
+        if ($guru->user_id) {
+            \App\Models\UserPosition::updateOrCreate(
+                ['user_id' => $guru->user_id],
+                ['position_ids' => $validated['position_ids'] ?? []]
+            );
         }
 
         return back()->with('success', 'Data guru berhasil diperbarui');

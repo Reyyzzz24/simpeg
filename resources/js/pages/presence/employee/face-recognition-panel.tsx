@@ -13,25 +13,18 @@ import { DashboardCard } from '@/components/dashboard-card';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 
-type PresenceType = 'masuk' | 'pulang';
-
 type Props = {
-    type: PresenceType;
     faceRegistered: boolean;
     faceRegisteredAt?: string | null;
-    isTeacherCheckout: boolean;
 };
 
 export default function FaceRecognitionPanel({
-    type,
     faceRegistered,
     faceRegisteredAt,
-    isTeacherCheckout,
 }: Props) {
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const videoRef = useRef<HTMLVideoElement | null>(null);
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [cameraError, setCameraError] = useState('');
     const [verificationError, setVerificationError] = useState('');
@@ -52,7 +45,7 @@ export default function FaceRecognitionPanel({
                 setCameraError('Gagal memuat model biometrik.');
             }
         };
-        loadModels();
+        void loadModels();
     }, []);
 
     const captureFaceDescriptor = async () => {
@@ -74,7 +67,7 @@ export default function FaceRecognitionPanel({
 
         setCameraError('');
 
-        return Array.from(detection.descriptor); // Ubah Float32Array jadi Array biasa
+        return Array.from(detection.descriptor);
     };
 
     const stopCamera = () => {
@@ -157,40 +150,6 @@ export default function FaceRecognitionPanel({
         );
     };
 
-    const submitPresence = async () => {
-        setIsSubmitting(true);
-        setVerificationError('');
-        const descriptor = await captureFaceDescriptor();
-
-        if (!descriptor) {
-            setIsSubmitting(false);
-
-            return;
-        }
-
-        router.post(
-            '/presence/self/face',
-            {
-                type,
-                face_embedding: descriptor, // Kirim array angka
-            },
-            {
-                preserveScroll: true,
-                onSuccess: (page) => {
-                    const flash = (page.props as any)?.flash;
-
-                    if (flash?.error) {
-                        setVerificationError(flash.error);
-                    }
-                },
-                onError: () => {
-                    setVerificationError('Maaf, wajah Anda tidak cocok.');
-                },
-                onFinish: () => setIsSubmitting(false),
-            },
-        );
-    };
-
     if (!isOpen) {
         return (
             <DashboardCard animation="fade-up" delay={0.2}>
@@ -203,7 +162,7 @@ export default function FaceRecognitionPanel({
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-500">
-                                        Face Recognition
+                                        Pendaftaran Wajah
                                     </p>
                                     <h4 className="text-sm leading-tight font-semibold text-slate-900">
                                         {faceRegistered
@@ -233,11 +192,16 @@ export default function FaceRecognitionPanel({
                             </div>
                         </div>
 
-                        <div className="w-full rounded-lg bg-slate-50 p-3 text-center">
+                        <div className="w-full space-y-2 rounded-lg bg-slate-50 p-3 text-center">
                             <p className="text-xs text-slate-500">
                                 {faceRegistered
                                     ? `Terverifikasi pada ${faceRegisteredAt || '-'}`
-                                    : 'Silakan daftarkan wajah untuk keperluan absensi.'}
+                                    : 'Daftarkan wajah agar bisa absen melalui Face Gate admin.'}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                                Absensi wajah dilakukan admin di halaman
+                                Presensi. Di sini hanya untuk mendaftarkan
+                                wajah.
                             </p>
                         </div>
                     </div>
@@ -247,55 +211,48 @@ export default function FaceRecognitionPanel({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex bg-black md:items-center md:justify-center md:bg-black/80 md:p-6 md:backdrop-blur-sm">
-            <div className="flex min-h-dvh w-full flex-col bg-black md:h-[min(760px,calc(100vh-3rem))] md:min-h-0 md:max-w-5xl md:overflow-hidden md:rounded-2xl md:border md:border-white/10 md:shadow-2xl">
-                <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
-                    <Button
-                        variant="outline"
-                        className="border-white/20"
-                        onClick={handleBack}
-                    >
+        // Menggunakan md: untuk membatasi efek modal hanya di layar desktop
+        <div className="fixed inset-0 z-[100] flex flex-col bg-black md:items-center md:justify-center md:bg-black/80 md:p-6 md:backdrop-blur-sm">
+            {/* Container Utama: h-dvh di mobile agar full, height terbatas di desktop */}
+            <div className="flex h-dvh w-full flex-col bg-black md:h-[min(760px,calc(100vh-3rem))] md:max-w-5xl md:overflow-hidden md:rounded-2xl md:border md:border-white/10 md:shadow-2xl">
+
+                {/* Header */}
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 p-4">
+                    <Button variant="outline" className="border-white/20" onClick={handleBack}>
                         <ArrowLeft className="mr-2 size-4" />
                         Back
                     </Button>
-
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            className="border-white/20"
-                            onClick={startCamera}
-                            disabled={isSubmitting}
-                        >
-                            <RefreshCw className="mr-2 size-4" />
-                            Restart Kamera
-                        </Button>
-                    </div>
+                    <Button variant="outline" className="border-white/20" onClick={startCamera} disabled={isSubmitting}>
+                        <RefreshCw className="mr-2 size-4" />
+                        Restart
+                    </Button>
                 </div>
 
-                <div className="relative flex flex-1 items-center justify-center bg-black">
+                {/* Area Video: flex-1 agar mengisi ruang tengah */}
+                <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-black">
                     <video
                         ref={videoRef}
-                        className="h-full w-full object-cover md:object-contain"
+                        className="h-full w-full object-cover"
                         playsInline
                         muted
                     />
-                    <canvas ref={canvasRef} className="hidden" />
-
+                    {/* Bingkai Wajah */}
                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div className="h-72 w-56 rounded-full border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)] md:h-80 md:w-64" />
+                        <div className="h-72 w-56 rounded-full border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]" />
                     </div>
 
                     {!isCameraReady && !cameraError && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
                             <div className="text-center">
-                                <Camera className="mx-auto mb-2 size-8" />
+                                <Camera className="mx-auto mb-2 size-10" />
                                 Membuka kamera...
                             </div>
                         </div>
                     )}
                 </div>
 
-                <div className="space-y-4 border-t border-white/10 p-4">
+                {/* Footer */}
+                <div className="shrink-0 space-y-4 border-t border-white/10 bg-black p-4">
                     {verificationError ? (
                         <div className="flex items-start gap-3 rounded-lg border border-red-400/40 bg-red-500/15 p-3 text-sm text-red-50">
                             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
@@ -303,40 +260,18 @@ export default function FaceRecognitionPanel({
                         </div>
                     ) : (
                         <p className="text-sm text-white/80">
-                            {cameraError ||
-                                (isTeacherCheckout
-                                    ? 'Untuk guru, absen pulang lewat wajah tetap akan diarahkan ke formulir jam mengajar.'
-                                    : 'Pastikan wajah berada di dalam bingkai dan cahaya cukup.')}
+                            {cameraError || 'Pastikan wajah berada di dalam bingkai dan cahaya cukup.'}
                         </p>
                     )}
 
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <Button
-                            variant={faceRegistered ? 'outline' : 'default'}
-                            disabled={
-                                !isCameraReady || isSubmitting || !modelsLoaded
-                            }
-                            onClick={registerFace}
-                        >
-                            <ShieldCheck className="mr-2 size-4" />
-                            {faceRegistered
-                                ? 'Daftar Ulang Wajah'
-                                : 'Daftar Wajah'}
-                        </Button>
-                        <Button
-                            disabled={
-                                !isCameraReady ||
-                                !faceRegistered ||
-                                isSubmitting
-                            }
-                            onClick={submitPresence}
-                        >
-                            <ScanFace className="mr-2 size-4" />
-                            {isSubmitting
-                                ? 'Memproses...'
-                                : 'Absen Dengan Wajah'}
-                        </Button>
-                    </div>
+                    <Button
+                        className="w-full"
+                        disabled={!isCameraReady || isSubmitting || !modelsLoaded}
+                        onClick={registerFace}
+                    >
+                        <ShieldCheck className="mr-2 size-4" />
+                        {isSubmitting ? 'Menyimpan...' : faceRegistered ? 'Daftar Ulang Wajah' : 'Daftar Wajah'}
+                    </Button>
                 </div>
             </div>
         </div>

@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { DollarSign, FileText, Users } from 'lucide-react';
+import { DollarSign, Download, FileText, Filter, Users } from 'lucide-react';
 import { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
@@ -115,7 +115,30 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                                     variant="outline"
                                     onClick={handleFilter}
                                 >
+                                    <Filter className="mr-2 size-4" />
                                     Filter
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const params = new URLSearchParams({
+                                            periode: periode,
+                                        });
+                                        window.location.href = `/report/salary/export?${params.toString()}`;
+                                    }}
+                                >
+                                    <Download className="mr-2 size-4" />
+                                    Export CSV
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const params = new URLSearchParams({ periode: periode });
+                                        window.open(`/report/salary/print?${params.toString()}`, '_blank');
+                                    }}
+                                >
+                                    <Download className="mr-2 size-4" />
+                                    Print / PDF
                                 </Button>
                             </div>
                         }

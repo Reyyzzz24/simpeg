@@ -10,21 +10,50 @@ export const getSalaryReportColumns = (): ColumnDef<any>[] => [
         header: 'Role',
     },
     {
+        accessorKey: 'jabatan',
+        header: 'Jabatan',
+        cell: ({ row }) => row.original.jabatan ?? '-',
+    },
+    {
         accessorKey: 'periode',
         header: 'Periode',
     },
     {
-        accessorKey: 'total_adjustment',
-        header: 'Adjustment',
+        accessorKey: 'details',
+        header: 'Detail Payroll',
         cell: ({ row }) => {
-            const value = Number(row.original.total_adjustment ?? 0);
+            const details = row.original.details ?? [];
 
             return (
-                <span className={value < 0 ? 'text-red-600' : 'text-green-600'}>
-                    {value > 0 ? '+' : ''}Rp {value.toLocaleString('id-ID')}
-                </span>
+                <div className="flex flex-col">
+                    {details.map((d: any, i: number) => (
+                        // Tambahkan border-b dan padding vertikal untuk garis pemisah
+                        <div key={i} className="text-sm py-1 border-b last:border-0">
+                            {d.komponen}
+                        </div>
+                    ))}
+                </div>
             );
         },
+    },
+    {
+        id: 'nominal',
+        header: () => <div className="text-center">Nominal</div>,
+        cell: ({ row }) => {
+            const details = row.original.details ?? [];
+            return (
+                <div className="flex flex-col items-center w-full">
+                    {details.map((d: any, i: number) => (
+                        <div key={i} className="text-sm py-1 border-b w-full text-center last:border-0">
+                            Rp {Number(d.amount ?? 0).toLocaleString('id-ID')}
+                        </div>
+                    ))}
+                </div>
+            );
+        },
+        meta: {
+            className: "text-center"
+        }
     },
     {
         accessorKey: 'total_gaji',

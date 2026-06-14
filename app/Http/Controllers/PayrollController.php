@@ -22,14 +22,19 @@ class PayrollController extends Controller
     {
         $periode = $request->input('periode');
 
-        // 1. Tambahkan relasi 'adjustments.component' agar nama komponen terbaca
         $query = Payroll::with(['user', 'adjustments.component']);
 
         if ($periode) {
             $query->where('periode', $periode);
         }
 
-        $data = $query->latest()->get()->map(function ($item) {
+        $payrolls = $query->latest()->get();
+
+        $data = $payrolls->map(function ($item) {
+            $adjustments = $item->adjustments
+                ->where('periode', $item->periode)
+                ->values();
+
             return [
                 'id' => $item->id,
                 'user' => ['name' => $item->user->name ?? '-'],
@@ -37,18 +42,19 @@ class PayrollController extends Controller
                 'periode' => $item->periode,
                 'total_gaji' => $item->total_gaji,
 
-                // 2. Kirim total nominal adjustment
-                'total_adjustment' => $item->adjustments->sum('amount'),
+                'total_adjustment' => $adjustments->sum('amount'),
 
-                // 3. Kirim array detail adjustment untuk ditampilkan sebagai Badge[cite: 9]
-                'adjustments' => $item->adjustments->map(function ($adj) {
+                'adjustments' => $adjustments->map(function ($adj) {
                     return [
                         'id' => $adj->id,
-                        'user_id' => $adj->user_id, // WAJIB ADA
-                        'component_id' => $adj->component_id, // WAJIB ADA
+                        'user_id' => $adj->user_id,
+                        'component_id' => $adj->component_id,
+                        'amount_type' => $adj->amount_type ?? 'fixed',
+                        'formula_type' => $adj->formula_type ?? 'hadir',
+                        'formula_interval_minutes' => $adj->formula_interval_minutes,
                         'amount' => $adj->amount,
                         'note' => $adj->note,
-                        'periode' => $adj->periode, // WAJIB ADA
+                        'periode' => $adj->periode,
                         'component' => [
                             'name' => $adj->component->name ?? 'Adjustment',
                         ],
@@ -61,8 +67,8 @@ class PayrollController extends Controller
             'payrolls' => $data,
             'filters' => ['periode' => $periode],
             'stats' => [
-                'total' => Payroll::count(),
-                'total_gaji' => Payroll::sum('total_gaji'),
+                'total' => $payrolls->count(),
+                'total_gaji' => $payrolls->sum('total_gaji'),
             ],
             'users' => User::select('id', 'name')->get(),
             'components' => SalaryComponent::select('id', 'name')->get(),
@@ -84,7 +90,8 @@ class PayrollController extends Controller
         $request->validate(['periode' => 'required|string']);
 
         // Pastikan memuat 'guru' untuk mengambil sub_role[cite: 24]
-        User::with(['guru', 'positions.allowances'])->chunk(100, function ($users) use ($request) {
+        // Do not eager-load `positions` via `with` because positions are stored in JSON `position_ids`.
+        User::with(['guru'])->chunk(100, function ($users) use ($request) {
             foreach ($users as $user) {
                 $this->service->generate($user, $request->periode);
             }

@@ -37,7 +37,7 @@ class SalaryRuleController extends Controller
             'components' => 'required|array',
             'components.*.id' => 'required|exists:salary_components,id',
             'components.*.amount_type' => 'required|in:fixed,percentage,formula',
-            'components.*.formula_type' => 'nullable|in:hadir,jam_kerja',
+            'components.*.formula_type' => 'nullable|in:hadir,jam_kerja,lembur,jam_mengajar_teori,jam_mengajar_praktik,piket',
             'components.*.formula_interval_minutes' => 'nullable|integer|min:1|max:1440',
             'components.*.amount' => 'required|numeric',
         ]);
@@ -54,9 +54,7 @@ class SalaryRuleController extends Controller
                 'salary_rule_id' => $rule->id,
                 'component_id' => $component['id'],
                 'amount_type' => $component['amount_type'], // Tidak perlu default 'fixed' lagi karena sudah divalidasi
-                'formula_type' => $component['amount_type'] === 'formula'
-                    ? ($component['formula_type'] ?? 'hadir')
-                    : null,
+                'formula_type' => $component['formula_type'] ?? 'hadir',
                 'formula_interval_minutes' => $component['amount_type'] === 'formula'
                     ? (int) ($component['formula_interval_minutes'] ?? 30)
                     : null,
@@ -77,7 +75,7 @@ class SalaryRuleController extends Controller
             'components' => 'required|array',
             'components.*.id' => 'required|exists:salary_components,id',
             'components.*.amount_type' => 'required|in:fixed,percentage,formula',
-            'components.*.formula_type' => 'nullable|in:hadir,jam_kerja',
+            'components.*.formula_type' => 'nullable|in:hadir,jam_kerja,lembur,jam_mengajar_teori,jam_mengajar_praktik,piket',
             'components.*.formula_interval_minutes' => 'nullable|integer|min:1|max:1440',
             'components.*.amount' => 'required|numeric',
         ]);
@@ -108,9 +106,7 @@ class SalaryRuleController extends Controller
                 ],
                 [
                     'amount_type' => $componentData['amount_type'],
-                    'formula_type' => $componentData['amount_type'] === 'formula'
-                        ? ($componentData['formula_type'] ?? 'hadir')
-                        : null,
+                    'formula_type' => $componentData['formula_type'] ?? 'hadir',
                     'formula_interval_minutes' => $componentData['amount_type'] === 'formula'
                         ? (int) ($componentData['formula_interval_minutes'] ?? 30)
                         : null,

@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('users', 'portal_id')) {
-            Schema::table('users', function (Blueprint $table) {
-                $table->char('portal_id', 36)->nullable()->unique()->after('id');
-            });
-        }
+        Schema::table('users', function (Blueprint $table) {
+            $table->uuid('portal_id')->nullable()->after('id');
+            $table->index('portal_id');
+        });
     }
 
     /**
@@ -23,10 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasColumn('users', 'portal_id')) {
-            Schema::table('users', function (Blueprint $table) {
-                $table->dropColumn('portal_id');
-            });
-        }
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('portal_id');
+        });
     }
 };

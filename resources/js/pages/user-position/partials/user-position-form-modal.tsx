@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 
 type Props = {
@@ -23,6 +24,9 @@ type Props = {
 export default function UserPositionFormModal({ open, setOpen, users, positions, record }: Props) {
     const { data, setData, post, put, processing, reset, clearErrors } = useForm({
         user_id: '',
+        // for create: allow multiple positions
+        position_ids: [] as string[],
+        // for edit: single position id
         position_id: '',
     })
 
@@ -31,6 +35,7 @@ export default function UserPositionFormModal({ open, setOpen, users, positions,
             setData({
                 user_id: String(record.user_id ?? record.user?.id ?? ''),
                 position_id: String(record.position_id ?? record.position?.id ?? ''),
+                position_ids: record.position_ids?.map((id: any) => String(id)) || (record.positions ? record.positions.map((p: any) => String(p.id)) : []),
             })
         } else if (open) {
             reset()
@@ -45,6 +50,7 @@ export default function UserPositionFormModal({ open, setOpen, users, positions,
                 onSuccess: () => setOpen(false),
             })
         } else {
+            // create multiple user positions if multiple selected
             post('/user-positions', {
                 onSuccess: () => {
                     reset()
@@ -85,20 +91,33 @@ export default function UserPositionFormModal({ open, setOpen, users, positions,
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Jabatan</Label>
-                            <Select
-                                value={data.position_id}
-                                onValueChange={(v) => setData('position_id', v)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih Jabatan" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {positions.map((p) => (
-                                        <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Label>Jabatan (boleh pilih lebih dari satu)</Label>
+                            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-auto py-1">
+                                {positions.map((p) => {
+                                    const val = String(p.id)
+                                    const checked = (data.position_ids || []).includes(val)
+                                    return (
+                                        <label key={p.id} className="flex items-center gap-2">
+                                            <Checkbox
+                                                checked={checked}
+                                                onCheckedChange={(c) => {
+                                                    const next = Array.isArray(data.position_ids)
+                                                        ? [...data.position_ids]
+                                                        : []
+                                                    if (c) {
+                                                        if (!next.includes(val)) next.push(val)
+                                                    } else {
+                                                        const idx = next.indexOf(val)
+                                                        if (idx > -1) next.splice(idx, 1)
+                                                    }
+                                                    setData('position_ids', next)
+                                                }}
+                                            />
+                                            <span>{p.name}</span>
+                                        </label>
+                                    )
+                                })}
+                            </div>
                         </div>
                     </div>
 

@@ -1,13 +1,14 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { Users, DollarSign, Plus, Settings2, FileText } from 'lucide-react';
 import { useState } from 'react';
-import { DashboardCard } from '@/components/dashboard-card';
 import ConfirmDialog from '@/components/confirm-dialog';
+import { DashboardCard } from '@/components/dashboard-card';
 import DeleteConfirmDialog from '@/components/delete-confirm-dialog';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
+import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { getPayrollColumns } from './columns';
 import AdjustmentModal from './partials/adjustment-modal';
@@ -19,6 +20,7 @@ export default function PayrollIndex({
     stats,
     users,
     components,
+    filters,
 }: any) {
     const [detail, setDetail] = useState<any>(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
@@ -32,8 +34,32 @@ export default function PayrollIndex({
 
     const [openAdjustment, setOpenAdjustment] = useState(false);
     const [selectedAdjustment, setSelectedAdjustment] = useState<any[]>([]);
+    const [periode, setPeriode] = useState(filters?.periode ?? '');
 
     const { delete: destroy, processing } = useForm();
+
+    const handleFilter = () => {
+        router.get(
+            '/payroll',
+            { periode },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const resetFilter = () => {
+        setPeriode('');
+        router.get(
+            '/payroll',
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
 
     const handleRegenerate = (record: any) => {
         setRegenerateRecord(record);
@@ -96,18 +122,24 @@ export default function PayrollIndex({
     };
 
     const confirmRegenerate = () => {
-        if (!regenerateRecord) return;
+        if (!regenerateRecord) {
+            return;
+        }
 
         const userId = regenerateRecord.user_id || regenerateRecord.user?.id;
 
-        router.post(`/payroll/generate/${userId}`, {
-            periode: regenerateRecord.periode
-        }, {
-            onFinish: () => {
-                setIsRegenDialogOpen(false);
-                setRegenerateRecord(null);
+        router.post(
+            `/payroll/generate/${userId}`,
+            {
+                periode: regenerateRecord.periode,
             },
-        });
+            {
+                onFinish: () => {
+                    setIsRegenDialogOpen(false);
+                    setRegenerateRecord(null);
+                },
+            },
+        );
     };
 
     return (
@@ -194,7 +226,23 @@ export default function PayrollIndex({
                         searchKey="user_name"
                         searchPlaceholder="Cari nama pegawai..."
                         actions={
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Input
+                                    type="month"
+                                    value={periode}
+                                    onChange={(event) =>
+                                        setPeriode(event.target.value)
+                                    }
+                                    className="w-44"
+                                />
+                                <Button variant="outline" onClick={handleFilter}>
+                                    Filter
+                                </Button>
+                                {filters?.periode && (
+                                    <Button variant="ghost" onClick={resetFilter}>
+                                        Reset
+                                    </Button>
+                                )}
                                 <Button
                                     onClick={handleAddAdjustment}
                                     variant="outline"
@@ -203,9 +251,7 @@ export default function PayrollIndex({
                                     Tambah Adjustment
                                 </Button>
 
-                                <Button
-                                    onClick={() => setOpenGenerate(true)}
-                                >
+                                <Button onClick={() => setOpenGenerate(true)}>
                                     <Plus className="mr-2 size-4" />
                                     Generate Gaji
                                 </Button>

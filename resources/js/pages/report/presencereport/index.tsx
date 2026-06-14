@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { Clock, Users } from 'lucide-react';
+import { Clock, Download, Users } from 'lucide-react';
 import { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
@@ -8,6 +8,7 @@ import { DataTable } from '@/components/ui/data-table';
 import AppLayout from '@/layouts/app-layout';
 import ReportFilter from '../partials/report-filter';
 import { getReportColumns } from './columns';
+import { Button } from '@/components/ui/button';
 
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -26,11 +27,19 @@ export default function PresenceReportIndex({ data, filters }: any) {
     const [start, setStart] = useState(filters?.start_date ?? '');
     const [end, setEnd] = useState(filters?.end_date ?? '');
 
-    const handleFilter = () => {
+    const handleFilter = (filters?: any) => {
+        const t = filters?.type ?? type;
+        const s = filters?.start ?? start;
+        const e = filters?.end ?? end;
+
+        setType(t);
+        setStart(s);
+        setEnd(e);
+
         router.get('/report/presence', {
-            type,
-            start_date: start,
-            end_date: end,
+            type: t,
+            start_date: s,
+            end_date: e,
         });
     };
 
@@ -89,19 +98,45 @@ export default function PresenceReportIndex({ data, filters }: any) {
 
                     <DataTable
                         data={data ?? []}
-                        columns={getReportColumns()}
+                        columns={getReportColumns(type)}
                         searchKey="nama"
                         searchPlaceholder="Cari nama..."
                         actions={
-                            <ReportFilter
-                                type={type}
-                                setType={setType}
-                                start={start}
-                                setStart={setStart}
-                                end={end}
-                                setEnd={setEnd}
-                                onApply={handleFilter}
-                            />
+                            <div className="flex items-center gap-2">
+                                <ReportFilter
+                                    type={type}
+                                    setType={setType}
+                                    start={start}
+                                    setStart={setStart}
+                                    end={end}
+                                    setEnd={setEnd}
+                                    onApply={handleFilter}
+                                />
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const params = new URLSearchParams({
+                                            type,
+                                            start_date: start,
+                                            end_date: end,
+                                        });
+                                        window.location.href = `/report/presence/export?${params.toString()}`;
+                                    }}
+                                >
+                                    <Download className="mr-2 size-4" />
+                                    Export CSV
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const params = new URLSearchParams({ type, start_date: start, end_date: end });
+                                        window.open(`/report/presence/print?${params.toString()}`, '_blank');
+                                    }}
+                                >
+                                    <Download className="mr-2 size-4" />
+                                    Print / PDF
+                                </Button>
+                            </div>
                         }
                     />
                 </div>

@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import type { SelfPresence } from './types';
+import { formatTeachingHours } from './types';
 
 const statusBadge = (status: string | null) => {
     const normalized = (status ?? 'BELUM LENGKAP').toLowerCase();
@@ -72,19 +73,12 @@ export const selfPresenceColumns: ColumnDef<SelfPresence>[] = [
     {
         accessorKey: 'total_jam_ajar',
         header: 'Jam Ajar',
-        cell: ({ row }) => {
-            const presence = row.original;
-
-            if (
-                !presence.total_jam_ajar ||
-                !presence.jenis_ajar ||
-                presence.jenis_ajar === 'none'
-            ) {
-                return '-';
-            }
-
-            return `${presence.total_jam_ajar} jam ${presence.jenis_ajar}`;
-        },
+        cell: ({ row }) => formatTeachingHours(row.original),
+    },
+    {
+        accessorKey: 'ada_piket',
+        header: 'Piket',
+        cell: ({ row }) => (row.original.ada_piket ? 'Ya' : '-'),
     },
     {
         accessorKey: 'status_validasi_ajar',

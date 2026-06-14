@@ -18,7 +18,7 @@ const breadcrumbs = [
     { title: 'Pegawai', href: '/employee' },
 ];
 
-export default function EmployeeIndex({ employees, stats }: any) {
+export default function EmployeeIndex({ employees, stats, positions }: any) {
     const [edit, setEdit] = useState(null);
     const [detail, setDetail] = useState(null);
     const [del, setDel] = useState(null);
@@ -71,6 +71,7 @@ export default function EmployeeIndex({ employees, stats }: any) {
                         isOpen={!!edit}
                         onClose={() => setEdit(null)}
                         record={edit}
+                        positions={positions}
                     />
                     <DetailEmployeeModal
                         isOpen={!!detail}

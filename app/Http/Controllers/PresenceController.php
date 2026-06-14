@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\LocationSetting;
 use App\Models\TimeSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -53,6 +54,9 @@ class PresenceController extends Controller
                 'tanggal' => $item->tanggal,
                 'total_jam_ajar' => $item->total_jam_ajar,
                 'jenis_ajar' => $item->jenis_ajar,
+                'jam_teori' => $item->jam_teori,
+                'jam_praktik' => $item->jam_praktik,
+                'ada_piket' => (bool) $item->ada_piket,
                 'durasi_hadir_menit' => $item->durasi_hadir_menit,
                 'selisih_jam_ajar_menit' => $item->selisih_jam_ajar_menit,
                 'status_validasi_ajar' => $item->status_validasi_ajar,
@@ -66,6 +70,7 @@ class PresenceController extends Controller
             ->countBy();
 
         $stats = [
+            'total_attendance' => $presences->count(),
             'total_present' => (int) ($statusCounts->get('hadir') ?? 0),
             'total_late' => (int) ($statusCounts->get('terlambat') ?? 0),
             'total_alpha' => (int) ($statusCounts->get('alpha') ?? 0),
@@ -82,6 +87,7 @@ class PresenceController extends Controller
             'stats' => $stats,
             'users' => $users,
             'timeWindow' => $timeWindow,
+            'locationSetting' => LocationSetting::current()->toArraySetting(),
             'filters' => [
                 'mode' => $mode,
                 'date' => $date,
@@ -105,11 +111,15 @@ class PresenceController extends Controller
                 'status' => $presence?->status_disiplin,
                 'total_jam_ajar' => $presence?->total_jam_ajar,
                 'jenis_ajar' => $presence?->jenis_ajar,
+                'jam_teori' => $presence?->jam_teori,
+                'jam_praktik' => $presence?->jam_praktik,
+                'ada_piket' => (bool) ($presence?->ada_piket ?? false),
                 'durasi_hadir_menit' => $presence?->durasi_hadir_menit,
                 'selisih_jam_ajar_menit' => $presence?->selisih_jam_ajar_menit,
                 'status_validasi_ajar' => $presence?->status_validasi_ajar,
             ],
             'user' => $this->formatSelfUser($user),
+            'locationSetting' => LocationSetting::current()->toArraySetting(),
         ]);
     }
 
@@ -127,6 +137,7 @@ class PresenceController extends Controller
             'selfPresences' => $presences,
             'todayPresence' => $this->formatTodayPresence($user),
             'user' => $this->formatSelfUser($user),
+            'locationSetting' => LocationSetting::current()->toArraySetting(),
         ]);
     }
 
@@ -214,8 +225,17 @@ class PresenceController extends Controller
         ]);
     }
 
-    public function markPresence($token)
+    public function markPresence(Request $request, ?string $token = null)
     {
+        $token = $token ?: $request->input('token');
+
+        if (!$token) {
+            return Inertia::render('presence/scan', [
+                'status' => 'invalid',
+                'message' => 'Token QR tidak ditemukan.'
+            ]);
+        }
+
         // 1. Validasi Token QR untuk tipe masuk/pulang
         $masukCached = Cache::get('presence_token_masuk');
         $pulangCached = Cache::get('presence_token_pulang');
@@ -227,8 +247,10 @@ class PresenceController extends Controller
             ]);
         }
 
-        $result = $this->markCurrentUserPresence(
-            $token === $masukCached ? 'masuk' : 'pulang'
+        $result = $this->markUserPresence(
+            Auth::user(),
+            $token === $masukCached ? 'masuk' : 'pulang',
+            $request,
         );
 
         if (isset($result['redirect_to'])) {
@@ -248,46 +270,54 @@ class PresenceController extends Controller
 
     public function markFacePresence(Request $request): RedirectResponse
     {
+        return back()->with(
+            'error',
+            'Absensi wajah hanya dapat dilakukan melalui halaman admin presensi (Face Gate). Daftar wajah tetap bisa dilakukan di menu Absensi Saya.'
+        );
+    }
+
+    public function markAdminFacePresence(Request $request): RedirectResponse
+    {
+        /** @var User $admin */
+        $admin = Auth::user();
+
+        if (! in_array($admin->role, ['admin', 'superadmin'], true)) {
+            abort(403, 'Hanya admin yang dapat melakukan absensi wajah.');
+        }
+
+        $locationSetting = LocationSetting::current();
+        $locationRules = $locationSetting->enabled ? ['required'] : ['nullable'];
+
         $validated = $request->validate([
             'type' => ['required', 'in:masuk,pulang'],
             'face_embedding' => ['required', 'array', 'size:128'],
+            'latitude' => [...$locationRules, 'numeric', 'between:-90,90'],
+            'longitude' => [...$locationRules, 'numeric', 'between:-180,180'],
         ]);
 
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
+        $matchedUser = $this->findUserByFaceEmbedding($validated['face_embedding']);
 
-        if (!$user->face_hash) {
-            return back()->with('error', 'Akses ditolak. Silakan daftarkan wajah Anda terlebih dahulu pada menu pendaftaran.');
+        if (! $matchedUser) {
+            return back()->with('error', 'Wajah tidak dikenali. Pastikan wajah sudah terdaftar di akun masing-masing.');
         }
 
-        $registeredDescriptor = is_array($user->face_hash)
-            ? $user->face_hash
-            : json_decode($user->face_hash, true);
-
-        if (!$registeredDescriptor || !is_array($registeredDescriptor)) {
-            return back()->with('error', 'Data biometrik Anda rusak. Silakan lakukan daftar ulang wajah.');
-        }
-
-        $distance = $this->calculateEuclideanDistance($registeredDescriptor, $validated['face_embedding']);
-
-        if ($distance > 0.5) {
-            return back()->with('error', 'Maaf, wajah Anda tidak cocok.');
-        }
-
-        $result = $this->markCurrentUserPresence($validated['type']);
+        $result = $this->markUserPresence($matchedUser, $validated['type'], $request);
 
         if (isset($result['redirect_to'])) {
-            return redirect($result['redirect_to'])->with('success', 'Wajah terverifikasi. Silakan lengkapi data berikut.');
+            return redirect($result['redirect_to'])
+                ->with('success', "Wajah terverifikasi: {$matchedUser->name}. Silakan lengkapi formulir absen pulang guru.");
         }
 
         if ($result['status'] === 'success') {
-            return redirect()->route('presence.self.history')
-                ->with('success', 'Verifikasi Berhasil! ' . $result['message']);
+            return back()->with(
+                'success',
+                "Absen berhasil untuk {$matchedUser->name}. {$result['message']}"
+            );
         }
 
         return back()->with(
             $result['status'] === 'info' ? 'success' : 'error',
-            $result['message']
+            "{$matchedUser->name}: {$result['message']}"
         );
     }
 
@@ -308,12 +338,13 @@ class PresenceController extends Controller
         return redirect()->back()->with('success', 'Data biometrik wajah berhasil diperbarui.');
     }
 
-    public function teacherCheckout()
+    public function teacherCheckout(Request $request)
     {
-        $user = Auth::user();
+        $authUser = Auth::user();
+        $user = $this->resolveTeacherCheckoutUser($request, $authUser);
 
         if ($user->role !== 'guru') {
-            return redirect()->route('presence.self')
+            return redirect()->route($this->teacherCheckoutReturnRoute($authUser))
                 ->with('error', 'Formulir absen pulang guru hanya tersedia untuk role guru.');
         }
 
@@ -324,7 +355,7 @@ class PresenceController extends Controller
         ]);
 
         if (!$presence->jam_masuk) {
-            return redirect()->route('presence.self')
+            return redirect()->route($this->teacherCheckoutReturnRoute($authUser))
                 ->with('error', 'Silakan absen masuk terlebih dahulu sebelum absen pulang.');
         }
 
@@ -332,11 +363,16 @@ class PresenceController extends Controller
             $presence->tanggal,
             $presence->jam_masuk,
             $presence->jam_pulang ?: $now->toTimeString(),
-            (int) ($presence->total_jam_ajar ?? 0)
+            (float) ($presence->total_jam_ajar ?? 0)
         );
+
+        $isAdminFlow = in_array($authUser->role, ['admin', 'superadmin'], true)
+            && $authUser->id !== $user->id;
 
         return Inertia::render('presence/employee/index', [
             'teacherCheckoutMode' => true,
+            'teacherCheckoutUserId' => $user->id,
+            'teacherCheckoutReturnTo' => $isAdminFlow ? route('presence.index') : route('presence.self'),
             'todayPresence' => [
                 'tanggal' => $presence->tanggal,
                 'jam_masuk' => Carbon::parse($presence->jam_masuk)->format('H:i'),
@@ -344,27 +380,44 @@ class PresenceController extends Controller
                 'status' => $presence->status_disiplin,
                 'total_jam_ajar' => $presence->total_jam_ajar,
                 'jenis_ajar' => $presence->jenis_ajar === 'none' ? null : $presence->jenis_ajar,
+                'jam_teori' => $presence->jam_teori,
+                'jam_praktik' => $presence->jam_praktik,
+                'ada_piket' => (bool) $presence->ada_piket,
                 'durasi_hadir_menit' => $presence->durasi_hadir_menit ?? $preview['durasi_hadir_menit'],
                 'selisih_jam_ajar_menit' => $presence->selisih_jam_ajar_menit ?? $preview['selisih_jam_ajar_menit'],
                 'status_validasi_ajar' => $presence->status_validasi_ajar ?? $preview['status_validasi_ajar'],
             ],
             'user' => $this->formatSelfUser($user),
+            'locationSetting' => LocationSetting::current()->toArraySetting(),
         ]);
     }
 
     public function storeTeacherCheckout(Request $request): RedirectResponse
     {
-        $user = Auth::user();
+        $authUser = Auth::user();
+        $user = $this->resolveTeacherCheckoutUser($request, $authUser);
 
         if ($user->role !== 'guru') {
-            return redirect()->route('presence.self')
+            return redirect()->route($this->teacherCheckoutReturnRoute($authUser))
                 ->with('error', 'Formulir absen pulang guru hanya tersedia untuk role guru.');
         }
 
         $validated = $request->validate([
-            'total_jam_ajar' => ['required', 'integer', 'min:0', 'max:24'],
-            'jenis_ajar' => ['required', 'in:teori,praktik'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'jam_teori' => ['nullable', 'numeric', 'min:0', 'max:24'],
+            'jam_praktik' => ['nullable', 'numeric', 'min:0', 'max:24'],
+            'ada_piket' => ['nullable', 'boolean'],
         ]);
+
+        $teachingData = $this->resolveTeachingHours($validated);
+
+        if ($teachingData['total_jam_ajar'] <= 0) {
+            return redirect()->route('presence.teacher-checkout', ['user_id' => $user->id])
+                ->withErrors([
+                    'jam_teori' => 'Isi minimal jam teori atau jam praktik.',
+                ])
+                ->withInput();
+        }
 
         $now = now()->setTimezone(config('app.timezone'));
         $presence = Attendance::where('user_id', $user->id)
@@ -372,7 +425,7 @@ class PresenceController extends Controller
             ->first();
 
         if (!$presence || !$presence->jam_masuk) {
-            return redirect()->route('presence.self')
+            return redirect()->route($this->teacherCheckoutReturnRoute($authUser))
                 ->with('error', 'Silakan absen masuk terlebih dahulu sebelum mengisi absen pulang guru.');
         }
 
@@ -381,24 +434,36 @@ class PresenceController extends Controller
             $presence->tanggal,
             $presence->jam_masuk,
             $jamPulang,
-            (int) $validated['total_jam_ajar']
+            $teachingData['total_jam_ajar']
         );
 
-        $presence->update(array_merge($validated, [
+        $presence->update(array_merge($teachingData, [
             'jam_pulang' => $jamPulang,
+            'ada_piket' => (bool) ($validated['ada_piket'] ?? false),
             'status_disiplin' => $presence->status_disiplin ?: 'HADIR',
         ], $comparison));
 
         $message = $comparison['status_validasi_ajar'] === 'melebihi_durasi'
-            ? 'Absen pulang tersimpan. Total jam ajar melebihi durasi hadir dan perlu dicek.'
-            : 'Absen pulang guru berhasil disimpan dan sesuai dengan durasi hadir.';
+            ? "Absen pulang {$user->name} tersimpan. Total jam ajar melebihi durasi hadir dan perlu dicek."
+            : "Absen pulang guru {$user->name} berhasil disimpan dan sesuai dengan durasi hadir.";
 
-        return redirect()->route('presence.self')->with('success', $message);
+        return redirect()->route($this->teacherCheckoutReturnRoute($authUser))
+            ->with('success', $message);
     }
 
-    private function markCurrentUserPresence(string $type): array
+    private function markCurrentUserPresence(string $type, Request $request): array
     {
-        $user = Auth::user();
+        return $this->markUserPresence(Auth::user(), $type, $request);
+    }
+
+    private function markUserPresence(User $user, string $type, Request $request): array
+    {
+        $locationError = $this->validatePresenceLocation($request);
+
+        if ($locationError) {
+            return $locationError;
+        }
+
         $now = now()->setTimezone(config('app.timezone'));
 
         $presence = Attendance::firstOrCreate([
@@ -421,7 +486,7 @@ class PresenceController extends Controller
 
             return [
                 'status' => 'info',
-                'message' => 'Anda sudah melakukan absen masuk.',
+                'message' => 'Sudah melakukan absen masuk.',
             ];
         }
 
@@ -437,7 +502,7 @@ class PresenceController extends Controller
                 return [
                     'status' => 'teacher_checkout',
                     'message' => 'Lengkapi formulir absen pulang guru.',
-                    'redirect_to' => route('presence.teacher-checkout'),
+                    'redirect_to' => route('presence.teacher-checkout', ['user_id' => $user->id]),
                 ];
             }
 
@@ -453,15 +518,66 @@ class PresenceController extends Controller
 
         return [
             'status' => 'info',
-            'message' => 'Anda sudah melakukan absen pulang.',
+            'message' => 'Sudah melakukan absen pulang.',
         ];
+    }
+
+    private function resolveTeacherCheckoutUser(Request $request, User $authUser): User
+    {
+        $targetUserId = $request->input('user_id');
+
+        if ($targetUserId && in_array($authUser->role, ['admin', 'superadmin'], true)) {
+            return User::findOrFail((int) $targetUserId);
+        }
+
+        if ($targetUserId && (int) $targetUserId !== $authUser->id) {
+            abort(403, 'Anda tidak memiliki akses untuk mengisi absen guru ini.');
+        }
+
+        return $authUser;
+    }
+
+    private function teacherCheckoutReturnRoute(User $authUser): string
+    {
+        return in_array($authUser->role, ['admin', 'superadmin'], true)
+            ? 'presence.index'
+            : 'presence.self';
+    }
+
+    private function findUserByFaceEmbedding(array $embedding): ?User
+    {
+        $bestUser = null;
+        $bestDistance = PHP_FLOAT_MAX;
+
+        foreach (User::whereNotNull('face_hash')->get() as $user) {
+            $registeredDescriptor = is_array($user->face_hash)
+                ? $user->face_hash
+                : json_decode($user->face_hash, true);
+
+            if (! is_array($registeredDescriptor)) {
+                continue;
+            }
+
+            $distance = $this->calculateEuclideanDistance($registeredDescriptor, $embedding);
+
+            if ($distance < $bestDistance) {
+                $bestDistance = $distance;
+                $bestUser = $user;
+            }
+        }
+
+        if ($bestUser && $bestDistance <= 0.5) {
+            return $bestUser;
+        }
+
+        return null;
     }
 
     private function calculateTeachingComparison(
         string $tanggal,
         ?string $jamMasuk,
         ?string $jamPulang,
-        int $totalJamAjar
+        float $totalJamAjar
     ): array {
         if (!$jamMasuk || !$jamPulang) {
             return [
@@ -479,7 +595,7 @@ class PresenceController extends Controller
         }
 
         $durationMinutes = (int) $start->diffInMinutes($end);
-        $teachingMinutes = $totalJamAjar * 60;
+        $teachingMinutes = (int) round($totalJamAjar * 60);
         $difference = $durationMinutes - $teachingMinutes;
 
         return [
@@ -489,9 +605,108 @@ class PresenceController extends Controller
         ];
     }
 
+    private function resolveTeachingHours(array $input): array
+    {
+        $jamTeori = (float) ($input['jam_teori'] ?? 0);
+        $jamPraktik = (float) ($input['jam_praktik'] ?? 0);
+        $totalJamAjar = $jamTeori + $jamPraktik;
+
+        if ($jamTeori > 0 && $jamPraktik > 0) {
+            $jenisAjar = 'teori_praktik';
+        } elseif ($jamTeori > 0) {
+            $jenisAjar = 'teori';
+        } elseif ($jamPraktik > 0) {
+            $jenisAjar = 'praktik';
+        } else {
+            $jenisAjar = 'none';
+        }
+
+        return [
+            'jam_teori' => $jamTeori > 0 ? $jamTeori : null,
+            'jam_praktik' => $jamPraktik > 0 ? $jamPraktik : null,
+            'total_jam_ajar' => (int) round($totalJamAjar),
+            'jenis_ajar' => $jenisAjar,
+        ];
+    }
+
     private function presenceTimeWindow(): array
     {
         return TimeSetting::current()->toTimeWindow();
+    }
+
+    private function validatePresenceLocation(Request $request): ?array
+    {
+        $setting = LocationSetting::current();
+
+        if (!$setting->enabled) {
+            return null;
+        }
+
+        $latitude = $request->input('latitude');
+        $longitude = $request->input('longitude');
+
+        if ($latitude === null || $longitude === null) {
+            return [
+                'status' => 'invalid',
+                'message' => 'Aktifkan izin lokasi terlebih dahulu sebelum melakukan absensi.',
+            ];
+        }
+
+        if (
+            !is_numeric($latitude) ||
+            !is_numeric($longitude) ||
+            (float) $latitude < -90 ||
+            (float) $latitude > 90 ||
+            (float) $longitude < -180 ||
+            (float) $longitude > 180
+        ) {
+            return [
+                'status' => 'invalid',
+                'message' => 'Lokasi perangkat tidak valid. Silakan aktifkan ulang lokasi.',
+            ];
+        }
+
+        if (!$setting->isConfigured()) {
+            return [
+                'status' => 'invalid',
+                'message' => 'Lokasi absen belum diatur oleh admin.',
+            ];
+        }
+
+        $distance = $this->calculateDistanceMeters(
+            (float) $latitude,
+            (float) $longitude,
+            (float) $setting->latitude,
+            (float) $setting->longitude,
+        );
+
+        if ($distance > $setting->radius_meters) {
+            return [
+                'status' => 'invalid',
+                'message' => 'Maaf saat ini anda tidak di radius absen...',
+            ];
+        }
+
+        return null;
+    }
+
+    private function calculateDistanceMeters(
+        float $fromLatitude,
+        float $fromLongitude,
+        float $toLatitude,
+        float $toLongitude,
+    ): float {
+        $earthRadiusMeters = 6371000;
+        $latFrom = deg2rad($fromLatitude);
+        $latTo = deg2rad($toLatitude);
+        $latDelta = deg2rad($toLatitude - $fromLatitude);
+        $lonDelta = deg2rad($toLongitude - $fromLongitude);
+
+        $a = sin($latDelta / 2) ** 2
+            + cos($latFrom) * cos($latTo) * sin($lonDelta / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadiusMeters * $c;
     }
 
     private function formatTodayPresence(User $user): array
@@ -508,6 +723,9 @@ class PresenceController extends Controller
             'status' => $presence?->status_disiplin,
             'total_jam_ajar' => $presence?->total_jam_ajar,
             'jenis_ajar' => $presence?->jenis_ajar,
+            'jam_teori' => $presence?->jam_teori,
+            'jam_praktik' => $presence?->jam_praktik,
+            'ada_piket' => (bool) ($presence?->ada_piket ?? false),
             'durasi_hadir_menit' => $presence?->durasi_hadir_menit,
             'selisih_jam_ajar_menit' => $presence?->selisih_jam_ajar_menit,
             'status_validasi_ajar' => $presence?->status_validasi_ajar,
@@ -603,6 +821,9 @@ class PresenceController extends Controller
             'status' => $presence->status_disiplin ?? 'BELUM LENGKAP',
             'total_jam_ajar' => $presence->total_jam_ajar,
             'jenis_ajar' => $presence->jenis_ajar,
+            'jam_teori' => $presence->jam_teori,
+            'jam_praktik' => $presence->jam_praktik,
+            'ada_piket' => (bool) $presence->ada_piket,
             'durasi_hadir_menit' => $presence->durasi_hadir_menit,
             'selisih_jam_ajar_menit' => $presence->selisih_jam_ajar_menit,
             'status_validasi_ajar' => $presence->status_validasi_ajar,

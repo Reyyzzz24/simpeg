@@ -1,37 +1,39 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { BookOpenCheck, Clock, Save, Timer } from 'lucide-react';
+import { BookOpenCheck, Clock, Save, ShieldCheck, Timer } from 'lucide-react';
 import { DashboardCard } from '@/components/dashboard-card';
 import InputError from '@/components/input-error';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import type { SelfPresenceUser, TodayPresence } from './types';
 import { formatMinutes } from './types';
 
 type Props = {
     user: SelfPresenceUser;
     todayPresence: TodayPresence;
+    targetUserId?: number;
+    returnTo?: string;
 };
 
-export default function TeacherCheckoutView({ user, todayPresence }: Props) {
+export default function TeacherCheckoutView({
+    user,
+    todayPresence,
+    targetUserId,
+    returnTo = '/presence/self',
+}: Props) {
     const form = useForm({
-        total_jam_ajar: todayPresence.total_jam_ajar?.toString() ?? '',
-        jenis_ajar:
-            todayPresence.jenis_ajar && todayPresence.jenis_ajar !== 'none'
-                ? todayPresence.jenis_ajar
-                : '',
+        user_id: targetUserId ?? null,
+        jam_teori: todayPresence.jam_teori?.toString() ?? '',
+        jam_praktik: todayPresence.jam_praktik?.toString() ?? '',
+        ada_piket: todayPresence.ada_piket ?? false,
     });
 
-    const previewTeachingMinutes = Number(form.data.total_jam_ajar || 0) * 60;
+    const totalJamAjar =
+        Number(form.data.jam_teori || 0) + Number(form.data.jam_praktik || 0);
+    const previewTeachingMinutes = totalJamAjar * 60;
     const previewDifference =
         todayPresence.durasi_hadir_menit === null
             ? null
@@ -45,7 +47,7 @@ export default function TeacherCheckoutView({ user, todayPresence }: Props) {
 
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
-        form.post('/presence/self/teacher-checkout');
+        form.post('/presence/teacher-checkout');
     };
 
     return (
@@ -56,7 +58,7 @@ export default function TeacherCheckoutView({ user, todayPresence }: Props) {
                 <PageHeader
                     title="Absen Pulang Guru"
                     subtitle={`${user.name} - ${user.role}`}
-                    description="Lengkapi rekap jam mengajar setelah scan QR atau Face Recognition pulang."
+                    description="Lengkapi rekap jam mengajar teori/praktik setelah scan QR atau Face Recognition pulang."
                     gradient="bg-linear-to-r from-emerald-600 to-cyan-500"
                     icon={<BookOpenCheck className="size-20 text-white" />}
                 />
@@ -120,57 +122,98 @@ export default function TeacherCheckoutView({ user, todayPresence }: Props) {
                             Formulir Jam Mengajar
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Data ini akan dibandingkan dengan rentang jam masuk
-                            dan pulang hari ini.
+                            Isi jam teori dan/atau praktik. Kosongkan field
+                            yang tidak diajar hari ini.
                         </p>
 
                         <div className="mt-6 grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="total_jam_ajar">
-                                    Total jam mengajar
+                                <Label htmlFor="jam_teori">
+                                    Jam mengajar teori
                                 </Label>
                                 <Input
-                                    id="total_jam_ajar"
+                                    id="jam_teori"
                                     type="number"
                                     min="0"
                                     max="24"
-                                    value={form.data.total_jam_ajar}
+                                    step="0.5"
+                                    value={form.data.jam_teori}
                                     onChange={(event) =>
                                         form.setData(
-                                            'total_jam_ajar',
+                                            'jam_teori',
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="Contoh: 6"
+                                    placeholder="Contoh: 2"
                                 />
-                                <InputError
-                                    message={form.errors.total_jam_ajar}
-                                />
+                                <InputError message={form.errors.jam_teori} />
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Jenis jam yang diajar</Label>
-                                <Select
-                                    value={form.data.jenis_ajar}
-                                    onValueChange={(value) =>
-                                        form.setData('jenis_ajar', value)
+                                <Label htmlFor="jam_praktik">
+                                    Jam mengajar praktik
+                                </Label>
+                                <Input
+                                    id="jam_praktik"
+                                    type="number"
+                                    min="0"
+                                    max="24"
+                                    step="0.5"
+                                    value={form.data.jam_praktik}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'jam_praktik',
+                                            event.target.value,
+                                        )
                                     }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Pilih teori atau praktik" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="teori">
-                                            Teori
-                                        </SelectItem>
-                                        <SelectItem value="praktik">
-                                            Praktik
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={form.errors.jenis_ajar} />
+                                    placeholder="Kosongkan jika tidak ada"
+                                />
+                                <InputError message={form.errors.jam_praktik} />
                             </div>
                         </div>
+
+                        <div className="mt-4 rounded-lg border bg-slate-50 p-4">
+                            <p className="text-sm text-muted-foreground">
+                                Total jam mengajar hari ini
+                            </p>
+                            <p className="text-2xl font-bold">
+                                {totalJamAjar} jam
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {Number(form.data.jam_teori || 0) > 0 &&
+                                Number(form.data.jam_praktik || 0) > 0
+                                    ? `${form.data.jam_teori}j teori + ${form.data.jam_praktik}j praktik`
+                                    : Number(form.data.jam_teori || 0) > 0
+                                      ? 'Hanya teori'
+                                      : Number(form.data.jam_praktik || 0) > 0
+                                        ? 'Hanya praktik'
+                                        : 'Belum diisi'}
+                            </p>
+                        </div>
+
+                        <div className="mt-6 flex items-start gap-3 rounded-lg border p-4">
+                            <Checkbox
+                                id="ada_piket"
+                                checked={form.data.ada_piket}
+                                onCheckedChange={(checked) =>
+                                    form.setData('ada_piket', checked === true)
+                                }
+                            />
+                            <div className="space-y-1">
+                                <Label
+                                    htmlFor="ada_piket"
+                                    className="flex items-center gap-2 font-medium"
+                                >
+                                    <ShieldCheck className="size-4 text-violet-600" />
+                                    Ada piket hari ini
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Centang jika guru bertugas piket pada hari
+                                    ini.
+                                </p>
+                            </div>
+                        </div>
+                        <InputError message={form.errors.ada_piket} />
 
                         <div className="mt-6 flex flex-wrap gap-3">
                             <Button type="submit" disabled={form.processing}>
@@ -182,7 +225,7 @@ export default function TeacherCheckoutView({ user, todayPresence }: Props) {
                             <Button
                                 variant="outline"
                                 type="button"
-                                onClick={() => router.visit('/presence/self')}
+                                onClick={() => router.visit(returnTo)}
                             >
                                 Batal
                             </Button>
@@ -210,6 +253,14 @@ export default function TeacherCheckoutView({ user, todayPresence }: Props) {
                                 </span>
                                 <span className="font-semibold">
                                     {formatMinutes(previewTeachingMinutes)}
+                                </span>
+                            </div>
+                            <div className="flex justify-between gap-4 border-b pb-3">
+                                <span className="text-muted-foreground">
+                                    Piket
+                                </span>
+                                <span className="font-semibold">
+                                    {form.data.ada_piket ? 'Ya' : 'Tidak'}
                                 </span>
                             </div>
                             <div className="flex justify-between gap-4">

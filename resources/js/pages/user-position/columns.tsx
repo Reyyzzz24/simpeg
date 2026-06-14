@@ -21,9 +21,9 @@ export const getColumns = (opts: {
     },
     {
         id: 'position',
-        accessorFn: (row) => row.position?.name ?? '',
+        accessorFn: (row) => (row.positions || []).map((p: any) => p.name).join(', '),
         header: 'Jabatan',
-        cell: ({ row }) => row.original.position?.name ?? '-',
+        cell: ({ row }) => (row.original.positions || []).map((p: any) => p.name).join(', ') || '-',
     },
     {
         id: 'actions',

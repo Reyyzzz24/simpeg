@@ -14,7 +14,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { CalendarIcon, Filter } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Props = {
     type: string;
@@ -23,7 +23,7 @@ type Props = {
     setStart: (v: string) => void;
     end: string;
     setEnd: (v: string) => void;
-    onApply: () => void;
+    onApply: (filters?: { type: string; start: string; end: string }) => void;
 };
 
 export default function ReportFilter({
@@ -37,11 +37,21 @@ export default function ReportFilter({
 }: Props) {
     const [openStart, setOpenStart] = useState(false);
     const [openEnd, setOpenEnd] = useState(false);
+    // Local states to avoid applying changes immediately
+    const [localType, setLocalType] = useState(type);
+    const [localStart, setLocalStart] = useState(start);
+    const [localEnd, setLocalEnd] = useState(end);
+
+    useEffect(() => {
+        setLocalType(type);
+        setLocalStart(start);
+        setLocalEnd(end);
+    }, [type, start, end]);
 
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline">
                     <Filter className="mr-2 size-4" />
                     Filter
                 </Button>
@@ -53,7 +63,7 @@ export default function ReportFilter({
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Jenis Pegawai</label>
 
-                    <Select value={type} onValueChange={setType}>
+                    <Select value={localType} onValueChange={setLocalType}>
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Pilih jenis pegawai" />
                         </SelectTrigger>
@@ -74,8 +84,8 @@ export default function ReportFilter({
                         <PopoverTrigger asChild>
                             <Button variant="outline" className="w-full justify-start">
                                 <CalendarIcon className="mr-2 size-4" />
-                                {start
-                                    ? format(new Date(start), 'dd MMM yyyy')
+                                {localStart
+                                    ? format(new Date(localStart), 'dd MMM yyyy')
                                     : 'Pilih tanggal'}
                             </Button>
                         </PopoverTrigger>
@@ -83,10 +93,10 @@ export default function ReportFilter({
                         <PopoverContent className="w-auto">
                             <Calendar
                                 mode="single"
-                                selected={start ? new Date(start) : undefined}
+                                selected={localStart ? new Date(localStart) : undefined}
                                 onSelect={(date) => {
                                     if (!date) return;
-                                    setStart(format(date, 'yyyy-MM-dd'));
+                                    setLocalStart(format(date, 'yyyy-MM-dd'));
                                     setOpenStart(false);
                                 }}
                             />
@@ -102,8 +112,8 @@ export default function ReportFilter({
                         <PopoverTrigger asChild>
                             <Button variant="outline" className="w-full justify-start">
                                 <CalendarIcon className="mr-2 size-4" />
-                                {end
-                                    ? format(new Date(end), 'dd MMM yyyy')
+                                {localEnd
+                                    ? format(new Date(localEnd), 'dd MMM yyyy')
                                     : 'Pilih tanggal'}
                             </Button>
                         </PopoverTrigger>
@@ -111,10 +121,10 @@ export default function ReportFilter({
                         <PopoverContent className="w-auto">
                             <Calendar
                                 mode="single"
-                                selected={end ? new Date(end) : undefined}
+                                selected={localEnd ? new Date(localEnd) : undefined}
                                 onSelect={(date) => {
                                     if (!date) return;
-                                    setEnd(format(date, 'yyyy-MM-dd'));
+                                    setLocalEnd(format(date, 'yyyy-MM-dd'));
                                     setOpenEnd(false);
                                 }}
                             />
@@ -123,7 +133,12 @@ export default function ReportFilter({
                 </div>
 
                 {/* APPLY */}
-                <Button className="w-full" onClick={onApply}>
+                <Button
+                    className="w-full"
+                    onClick={() => {
+                        onApply({ type: localType ?? 'all', start: localStart ?? '', end: localEnd ?? '' });
+                    }}
+                >
                     Terapkan Filter
                 </Button>
             </PopoverContent>

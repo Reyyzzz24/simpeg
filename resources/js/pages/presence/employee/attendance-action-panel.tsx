@@ -44,8 +44,8 @@ export default function AttendanceActionPanel({
                 <p className="font-medium">Pilih metode</p>
                 <p className="mt-1 text-muted-foreground">
                     {isTeacher && type === 'pulang'
-                        ? 'Setelah scan QR atau Face Recognition, guru diarahkan ke formulir jam mengajar.'
-                        : 'Scan QR dan Face Recognition tersedia selama perangkat memiliki kamera.'}
+                        ? 'Setelah scan QR, guru diarahkan ke formulir jam mengajar. Absensi wajah dilakukan admin di halaman Presensi.'
+                        : 'Scan QR tersedia selama perangkat memiliki kamera. Daftarkan wajah untuk absensi via Face Gate admin.'}
                 </p>
             </div>
 
@@ -57,7 +57,7 @@ export default function AttendanceActionPanel({
                         className="mt-4 w-full"
                         size="lg"
                         onClick={() =>
-                            router.visit('/presence/self/teacher-checkout')
+                            router.visit('/presence/teacher-checkout')
                         }
                     >
                         <BookOpenCheck className="mr-2 size-5" />

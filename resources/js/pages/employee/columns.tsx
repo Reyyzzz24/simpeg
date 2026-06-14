@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 export const columns: ColumnDef<any>[] = [
     {
         accessorKey: 'nama',
-        header: 'Nama Guru',
+        header: 'Nama',
     },
     {
         accessorKey: 'tempat_tanggal_lahir',
@@ -56,9 +56,10 @@ export const columns: ColumnDef<any>[] = [
         cell: ({ row }) => row.original.status_kerja || '-',
     },
     {
-        accessorKey: 'jabatan',
+        id: 'position',
+        accessorFn: (row) => (row.positions || []).map((p: any) => p.name).join(', '),
         header: 'Jabatan',
-        cell: ({ row }) => row.original.jabatan || '-',
+        cell: ({ row }) => (row.original.positions || []).map((p: any) => p.name).join(', ') || '-',
     },
 ];
 

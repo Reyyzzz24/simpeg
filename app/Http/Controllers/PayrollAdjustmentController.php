@@ -8,9 +8,14 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Payroll;
+use App\Services\PayrollService;
 
 class PayrollAdjustmentController extends Controller
 {
+    public function __construct(private PayrollService $payrollService)
+    {
+    }
+
     // Di dalam PayrollController.php
     public function index()
     {
@@ -42,6 +47,9 @@ class PayrollAdjustmentController extends Controller
             'periode' => 'required|string',
             'items' => 'required|array|min:1',
             'items.*.component_id' => 'required|exists:salary_components,id',
+            'items.*.amount_type' => 'required|in:fixed,percentage,formula',
+            'items.*.formula_type' => 'nullable|in:hadir,jam_kerja,lembur,jam_mengajar_teori,jam_mengajar_praktik,piket',
+            'items.*.formula_interval_minutes' => 'nullable|integer|min:1',
             'items.*.amount' => 'required|numeric',
             'items.*.note' => 'nullable|string',
         ]);
@@ -55,34 +63,81 @@ class PayrollAdjustmentController extends Controller
                 'user_id' => $validated['user_id'],
                 'periode' => $validated['periode'],
                 'component_id' => $item['component_id'],
+                'amount_type' => $item['amount_type'],
+                'formula_type' => $item['formula_type'] ?? 'hadir',
+                'formula_interval_minutes' => $item['amount_type'] === 'formula'
+                    ? ($item['formula_interval_minutes'] ?? 30)
+                    : null,
                 'amount' => $item['amount'],
-                'note' => $item['note'],
+                'note' => $item['note'] ?? null,
             ]);
         }
 
-        return back()->with('success', 'Data Adjustment berhasil diperbarui');
+        $this->regeneratePayroll((int) $validated['user_id'], $validated['periode']);
+
+        return back()->with('success', 'Data Adjustment berhasil diperbarui dan payroll dihitung ulang');
     }
 
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'amount' => 'required|numeric',
-            'note' => 'nullable|string',
-            'component_id' => 'required|exists:salary_components,id',
+            'user_id' => 'required|exists:users,id',
             'periode' => 'required|string',
+            'items' => 'required|array|min:1',
+            'items.*.component_id' => 'required|exists:salary_components,id',
+            'items.*.amount_type' => 'required|in:fixed,percentage,formula',
+            'items.*.formula_type' => 'nullable|in:hadir,jam_kerja,lembur,jam_mengajar_teori,jam_mengajar_praktik,piket',
+            'items.*.formula_interval_minutes' => 'nullable|integer|min:1',
+            'items.*.amount' => 'required|numeric',
+            'items.*.note' => 'nullable|string',
         ]);
 
         $adjustment = PayrollAdjustment::findOrFail($id);
-        $adjustment->update($validated);
 
-        return back()->with('success', 'Adjustment berhasil diperbarui');
+        PayrollAdjustment::where('user_id', $adjustment->user_id)
+            ->where('periode', $adjustment->periode)
+            ->delete();
+
+        foreach ($validated['items'] as $item) {
+            PayrollAdjustment::create([
+                'user_id' => $validated['user_id'],
+                'periode' => $validated['periode'],
+                'component_id' => $item['component_id'],
+                'amount_type' => $item['amount_type'],
+                'formula_type' => $item['formula_type'] ?? 'hadir',
+                'formula_interval_minutes' => $item['amount_type'] === 'formula'
+                    ? ($item['formula_interval_minutes'] ?? 30)
+                    : null,
+                'amount' => $item['amount'],
+                'note' => $item['note'] ?? null,
+            ]);
+        }
+
+        $this->regeneratePayroll((int) $validated['user_id'], $validated['periode']);
+
+        return back()->with('success', 'Adjustment berhasil diperbarui dan payroll dihitung ulang');
     }
 
     public function destroy($id)
     {
         $adjustment = PayrollAdjustment::findOrFail($id);
+        $userId = $adjustment->user_id;
+        $periode = $adjustment->periode;
+
         $adjustment->delete();
 
-        return back()->with('success', 'Adjustment berhasil dihapus');
+        $this->regeneratePayroll((int) $userId, $periode);
+
+        return back()->with('success', 'Adjustment berhasil dihapus dan payroll dihitung ulang');
+    }
+
+    private function regeneratePayroll(int $userId, string $periode): void
+    {
+        // Do not eager-load `positions` here because positions are stored as JSON; PayrollService will load them.
+        $user = User::with(['guru', 'pegawai'])->find($userId);
+
+        if ($user) {
+            $this->payrollService->generate($user, $periode);
+        }
     }
 }
