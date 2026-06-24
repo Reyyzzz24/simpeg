@@ -1,44 +1,39 @@
+import { useEffect, useState } from 'react';
+import { Filter } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import {
     Popover,
-    PopoverTrigger,
     PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui/popover';
 import {
     Select,
-    SelectTrigger,
     SelectContent,
     SelectItem,
+    SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { CalendarIcon, Filter } from 'lucide-react';
-import { useState, useEffect } from 'react';
 
 type Props = {
     type: string;
-    setType: (v: string) => void;
     start: string;
-    setStart: (v: string) => void;
     end: string;
-    setEnd: (v: string) => void;
-    onApply: (filters?: { type: string; start: string; end: string }) => void;
+    onApply: (filters: {
+        type: string;
+        start: string;
+        end: string;
+    }) => void;
 };
 
 export default function ReportFilter({
     type,
-    setType,
     start,
-    setStart,
     end,
-    setEnd,
     onApply,
 }: Props) {
     const [open, setOpen] = useState(false);
-    const [openStart, setOpenStart] = useState(false);
-    const [openEnd, setOpenEnd] = useState(false);
-    // Local states to avoid applying changes immediately
+
     const [localType, setLocalType] = useState(type);
     const [localStart, setLocalStart] = useState(start);
     const [localEnd, setLocalEnd] = useState(end);
@@ -48,6 +43,16 @@ export default function ReportFilter({
         setLocalStart(start);
         setLocalEnd(end);
     }, [type, start, end]);
+
+    const handleApply = () => {
+        onApply({
+            type: localType,
+            start: localStart,
+            end: localEnd,
+        });
+
+        setOpen(false);
+    };
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -65,7 +70,10 @@ export default function ReportFilter({
                             Jenis Pegawai
                         </label>
 
-                        <Select value={localType} onValueChange={setLocalType}>
+                        <Select
+                            value={localType}
+                            onValueChange={setLocalType}
+                        >
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Pilih jenis pegawai" />
                             </SelectTrigger>
@@ -105,17 +113,7 @@ export default function ReportFilter({
                     </div>
                 </div>
 
-                <Button
-                    className="w-full"
-                    onClick={() => {
-                        onApply({
-                            type: localType ?? 'all',
-                            start: localStart ?? '',
-                            end: localEnd ?? '',
-                        });
-                        setOpen(false);
-                    }}
-                >
+                <Button className="w-full" onClick={handleApply}>
                     Terapkan Filter
                 </Button>
             </PopoverContent>

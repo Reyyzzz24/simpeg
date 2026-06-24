@@ -105,11 +105,8 @@ export default function PresenceReportIndex({ data, filters }: any) {
                             <div className="flex items-center gap-2">
                                 <ReportFilter
                                     type={type}
-                                    setType={setType}
                                     start={start}
-                                    setStart={setStart}
                                     end={end}
-                                    setEnd={setEnd}
                                     onApply={handleFilter}
                                 />
                                 <Button

@@ -10,7 +10,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Edit, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'; // Import ikon tambahan
+import { Edit, MoreHorizontal, Trash2 } from 'lucide-react'; // Import ikon tambahan
 
 export const columns: ColumnDef<any>[] = [
     {
