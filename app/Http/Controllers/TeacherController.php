@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Teacher;
+use App\Models\TeacherProfile;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Position;
+use App\Models\UserPosition;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Schema;
 
@@ -13,12 +15,13 @@ class TeacherController extends Controller
 {
     public function index(Request $request)
     {
-        $teachers = Teacher::with('user', 'position')
+        // Tambahkan 'profile' ke dalam with()
+        $teachers = Teacher::with(['user', 'position', 'profile'])
             ->orderBy('nama', 'asc')
             ->get()
             ->map(function ($item) {
-                // Ambil data posisi dari method baru
                 $positions = $item->getPositions();
+                $p = $item->profile;
 
                 return [
                     'id' => $item->id,
@@ -29,74 +32,24 @@ class TeacherController extends Controller
                     'nuptk' => $item->nuptk,
                     'sub_role' => $item->sub_role,
                     'status_kerja' => $item->status_kerja ?? 'tetap',
-                    'position_ids' => $positions->pluck('id')->map(function ($v) {
-                        return (string) $v;
-                    })->toArray(),
-                    'positions' => $positions->map(function ($p) {
-                        return ['id' => $p->id, 'name' => $p->name];
-                    }),
-
-                    // Jabatan diambil dari posisi pertama atau sesuai kebutuhan
+                    'position_ids' => $positions->pluck('id')->map(fn($v) => (string) $v)->toArray(),
+                    'positions' => $positions->map(fn($p) => ['id' => $p->id, 'name' => $p->name]),
                     'jabatan' => $positions->first()->name ?? '-',
-
                     'tugas_tambahan' => $item->tugas_tambahan,
                     'mata_pelajaran' => $item->mata_pelajaran,
                     'pendidikan_terakhir' => $item->pendidikan_terakhir,
                     'tmt_sekolah' => $item->tmt_sekolah,
+                    
+                    // Mapping profile agar bisa diakses di frontend
+                    'profile' => $p, 
                 ];
             });
 
         return Inertia::render('teacher/index', [
             'teachers' => $teachers,
             'positions' => Position::all(),
-            'stats' => [
-                'total' => $teachers->count()
-            ],
+            'stats' => ['total' => $teachers->count()],
         ]);
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'nama' => 'required|string|max:255',
-            'tempat_tanggal_lahir' => 'nullable|string|max:255',
-            'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
-            'nuptk' => 'nullable|string|unique:teachers,nuptk',
-            'position_id' => 'nullable|exists:positions,id',
-            'tugas_tambahan' => 'nullable|string|max:255',
-            'mata_pelajaran' => 'nullable|string|max:255',
-            'pendidikan_terakhir' => 'nullable|string|max:255',
-            'tmt_sekolah' => 'nullable|date',
-            'sub_role' => 'nullable|string',
-            'status_kerja' => ['required', Rule::in(Teacher::STATUS_KERJA_OPTIONS)],
-        ]);
-
-        $createData = [
-            'user_id' => $validated['user_id'],
-            'nama' => $validated['nama'],
-            'tempat_tanggal_lahir' => $validated['tempat_tanggal_lahir'] ?? null,
-            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
-            'nuptk' => $validated['nuptk'] ?? null,
-            'tugas_tambahan' => $validated['tugas_tambahan'] ?? null,
-            'mata_pelajaran' => $validated['mata_pelajaran'] ?? null,
-            'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
-            'tmt_sekolah' => $validated['tmt_sekolah'] ?? null,
-            'sub_role' => $validated['sub_role'] ?? null,
-            'status_kerja' => $validated['status_kerja'],
-        ];
-
-        if (Schema::hasColumn('teachers', 'position_id')) {
-            $createData['position_id'] = $validated['position_id'] ?? null;
-        }
-
-        if (Schema::hasColumn('teachers', 'position_ids')) {
-            $createData['position_ids'] = $validated['position_ids'] ?? null;
-        }
-
-        Teacher::create($createData);
-
-        return back()->with('success', 'Data guru berhasil ditambahkan');
     }
 
     public function update(Request $request, Teacher $guru)
@@ -108,63 +61,56 @@ class TeacherController extends Controller
             'nuptk' => 'nullable|string|unique:teachers,nuptk,' . $guru->id,
             'sub_role' => 'nullable|string',
             'status_kerja' => ['required', Rule::in(Teacher::STATUS_KERJA_OPTIONS)],
-            'position_id' => 'nullable|exists:positions,id',
             'position_ids' => 'nullable|array',
-            'position_ids.*' => 'exists:positions,id',
             'tugas_tambahan' => 'nullable|string|max:255',
             'mata_pelajaran' => 'nullable|string|max:255',
             'pendidikan_terakhir' => 'nullable|string|max:255',
             'tmt_sekolah' => 'nullable|date',
+            
+            // Validasi profile
+            'profile' => 'nullable|array',
         ]);
 
-        $updateData = [
-            'nama' => $validated['nama'],
-            'tempat_tanggal_lahir' => $validated['tempat_tanggal_lahir'] ?? null,
-            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
-            'nuptk' => $validated['nuptk'] ?? null,
-            'sub_role' => $validated['sub_role'] ?? null,
-            'status_kerja' => $validated['status_kerja'],
-            'tugas_tambahan' => $validated['tugas_tambahan'] ?? null,
-            'mata_pelajaran' => $validated['mata_pelajaran'] ?? null,
-            'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
-            'tmt_sekolah' => $validated['tmt_sekolah'] ?? null,
-        ];
+        // 1. Update Teacher Utama
+        $updateData = array_intersect_key($validated, array_flip([
+            'nama', 'tempat_tanggal_lahir', 'jenis_kelamin', 'nuptk', 'sub_role', 
+            'status_kerja', 'tugas_tambahan', 'mata_pelajaran', 'pendidikan_terakhir', 'tmt_sekolah'
+        ]));
 
         if (Schema::hasColumn('teachers', 'position_ids')) {
             $updateData['position_ids'] = $validated['position_ids'] ?? null;
         }
 
-        if (Schema::hasColumn('teachers', 'position_id')) {
-            $updateData['position_id'] = $validated['position_id'] ?? (isset($validated['position_ids'][0]) ? $validated['position_ids'][0] : null);
-        }
-
         $guru->update($updateData);
 
-        // sync user name
+        // 2. Update/Create TeacherProfile
+        if ($request->has('profile')) {
+            $profileData = $request->profile;
+            
+            // Paksa field boolean agar tidak null
+            $boolFields = ['lisensi_kepala_sekolah', 'diklat_kepengawasan', 'keahlian_braille', 'keahlian_bahasa_isyarat'];
+            foreach ($boolFields as $field) {
+                $profileData[$field] = (bool) ($profileData[$field] ?? false);
+            }
+
+            $guru->profile()->updateOrCreate(
+                ['teacher_id' => $guru->id],
+                $profileData
+            );
+        }
+
+        // 3. Sync User & UserPosition
         if ($guru->user) {
-            $guru->user->update([
-                'name' => $validated['nama']
-            ]);
+            $guru->user->update(['name' => $validated['nama']]);
         }
 
         if ($guru->user_id) {
-            \App\Models\UserPosition::updateOrCreate(
+            UserPosition::updateOrCreate(
                 ['user_id' => $guru->user_id],
                 ['position_ids' => $validated['position_ids'] ?? []]
             );
         }
 
         return back()->with('success', 'Data guru berhasil diperbarui');
-    }
-
-    public function destroy(Teacher $guru)
-    {
-        if ($guru->user) {
-            $guru->user->delete();
-        } else {
-            $guru->delete();
-        }
-
-        return back()->with('success', 'Data guru berhasil dihapus');
     }
 }

@@ -18,7 +18,11 @@ class ReportExportController extends Controller
         $end = $request->input('end_date');
         $status = $request->input('status', 'all');
 
-        $query = Overtime::with('employee:id,nama,nip');
+        $query = Overtime::with([
+            'user:id,name,role',
+            'employee:id,user_id,nama,nip',
+            'teacher:id,user_id,nama,nuptk',
+        ]);
 
         if ($start && $end) {
             $query->whereBetween('tanggal', [$start, $end]);
@@ -66,8 +70,10 @@ class ReportExportController extends Controller
 
                 fputcsv($out, [
                     $no,
-                    $item->employee?->nama ?? '-',
-                    $item->employee?->nip ?? '-',
+                    ($item->user?->role === 'guru' ? $item->teacher?->nama : $item->employee?->nama)
+                        ?? $item->user?->name
+                        ?? '-',
+                    $item->employee?->nip ?? $item->teacher?->nuptk ?? '-',
                     $item->tanggal?->format('Y-m-d') ?? '',
                     $jamMulaiStr,
                     $jamSelesaiStr,
@@ -91,7 +97,11 @@ class ReportExportController extends Controller
         $end = $request->input('end_date');
         $status = $request->input('status', 'all');
 
-        $query = Overtime::with('employee:id,nama,nip');
+        $query = Overtime::with([
+            'user:id,name,role',
+            'employee:id,user_id,nama,nip',
+            'teacher:id,user_id,nama,nuptk',
+        ]);
 
         if ($start && $end) {
             $query->whereBetween('tanggal', [$start, $end]);
@@ -108,13 +118,17 @@ class ReportExportController extends Controller
         $data = $query->latest('tanggal')->latest('id')->get()->map(function (Overtime $item) {
             $jamMulai = Carbon::parse($item->jam_mulai);
             $jamSelesai = Carbon::parse($item->jam_selesai);
-            if ($jamSelesai->lessThan($jamMulai)) $jamSelesai->addDay();
+            if ($jamSelesai->lessThan($jamMulai)) {
+                $jamSelesai->addDay();
+            }
             $durasiJam = round($jamMulai->diffInMinutes($jamSelesai) / 60, 2);
 
             return [
                 'id' => $item->id,
-                'pegawai_nama' => $item->employee?->nama ?? '-',
-                'pegawai_nip' => $item->employee?->nip ?? '-',
+                'pegawai_nama' => ($item->user?->role === 'guru' ? $item->teacher?->nama : $item->employee?->nama)
+                    ?? $item->user?->name
+                    ?? '-',
+                'pegawai_nip' => $item->employee?->nip ?? $item->teacher?->nuptk ?? null,
                 'tanggal' => $item->tanggal?->format('Y-m-d'),
                 'jam_mulai' => substr((string) $item->jam_mulai, 0, 5),
                 'jam_selesai' => substr((string) $item->jam_selesai, 0, 5),
@@ -130,10 +144,17 @@ class ReportExportController extends Controller
     public function salaryCsv(Request $request)
     {
         $periode = $request->input('periode');
+        $role = $request->input('role', 'all');
 
         $query = Payroll::with(['user', 'details.component', 'adjustments.component']);
         if ($periode) {
             $query->where('periode', $periode);
+        }
+
+        if (in_array($role, ['pegawai', 'guru'], true)) {
+            $query->whereHas('user', function ($query) use ($role) {
+                $query->where('role', $role);
+            });
         }
 
         $payrolls = $query->latest('periode')->latest('id')->get();
@@ -158,11 +179,13 @@ class ReportExportController extends Controller
                     return "{$name}:{$amount}";
                 })->implode('; ');
 
-                $jabatan = '';
-                try {
-                    $jabatan = implode(', ', $p->user->positions()->pluck('name')->toArray());
-                } catch (\Throwable $e) {
-                    $jabatan = '';
+                $jabatan = $p->jabatan_snapshot ?? '';
+                if (! $jabatan) {
+                    try {
+                        $jabatan = implode(', ', $p->user->positions()->pluck('name')->toArray());
+                    } catch (\Throwable $e) {
+                        $jabatan = '';
+                    }
                 }
 
                 fputcsv($out, [
@@ -187,10 +210,17 @@ class ReportExportController extends Controller
     public function salaryPrint(Request $request)
     {
         $periode = $request->input('periode');
+        $role = $request->input('role', 'all');
 
         $query = Payroll::with(['user', 'details.component', 'adjustments.component']);
         if ($periode) {
             $query->where('periode', $periode);
+        }
+
+        if (in_array($role, ['pegawai', 'guru'], true)) {
+            $query->whereHas('user', function ($query) use ($role) {
+                $query->where('role', $role);
+            });
         }
 
         $payrolls = $query->latest('periode')->latest('id')->get()->map(function ($p) {
@@ -206,7 +236,8 @@ class ReportExportController extends Controller
                 'id' => $p->id,
                 'nama' => $p->user->name ?? '-',
                 'role' => $p->user->role ?? '-',
-                'jabatan' => implode(', ', $p->user->positions()->pluck('name')->toArray()),
+                'jabatan' => $p->jabatan_snapshot
+                    ?: implode(', ', $p->user->positions()->pluck('name')->toArray()),
                 'periode' => $p->periode,
                 'total_gaji' => (float) $p->total_gaji,
                 'details' => $details,

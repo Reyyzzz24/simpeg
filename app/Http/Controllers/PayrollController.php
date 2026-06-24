@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Payroll;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use App\Services\PayrollService;
 use App\Models\SalaryComponent;
@@ -22,7 +23,11 @@ class PayrollController extends Controller
     {
         $periode = $request->input('periode');
 
-        $query = Payroll::with(['user', 'adjustments.component']);
+        $query = Payroll::with(['user.pegawai', 'user.guru', 'adjustments.component'])
+            ->whereHas('user', function ($query) {
+                $query->whereHas('pegawai')
+                    ->orWhereHas('guru');
+            });
 
         if ($periode) {
             $query->where('periode', $periode);
@@ -37,8 +42,11 @@ class PayrollController extends Controller
 
             return [
                 'id' => $item->id,
-                'user' => ['name' => $item->user->name ?? '-'],
+                'user' => [
+                    'name' => $this->payrollUserName($item->user),
+                ],
                 'user_id' => $item->user_id,
+                'user_type' => $item->user?->guru ? 'Guru' : 'Pegawai',
                 'periode' => $item->periode,
                 'total_gaji' => $item->total_gaji,
 
@@ -70,7 +78,7 @@ class PayrollController extends Controller
                 'total' => $payrolls->count(),
                 'total_gaji' => $payrolls->sum('total_gaji'),
             ],
-            'users' => User::select('id', 'name')->get(),
+            'users' => $this->payrollUsers(),
             'components' => SalaryComponent::select('id', 'name')->get(),
         ]);
     }
@@ -78,6 +86,8 @@ class PayrollController extends Controller
     public function generate(User $user, Request $request)
     {
         $periode = $request->input('periode');
+
+        $this->ensurePayrollUser($user);
 
         $this->service->generate($user, $periode);
 
@@ -89,15 +99,18 @@ class PayrollController extends Controller
     {
         $request->validate(['periode' => 'required|string']);
 
-        // Pastikan memuat 'guru' untuk mengambil sub_role[cite: 24]
-        // Do not eager-load `positions` via `with` because positions are stored in JSON `position_ids`.
-        User::with(['guru'])->chunk(100, function ($users) use ($request) {
-            foreach ($users as $user) {
-                $this->service->generate($user, $request->periode);
-            }
-        });
+        User::with(['guru', 'pegawai'])
+            ->where(function ($query) {
+                $query->whereHas('pegawai')
+                    ->orWhereHas('guru');
+            })
+            ->chunk(100, function ($users) use ($request) {
+                foreach ($users as $user) {
+                    $this->service->generate($user, $request->periode);
+                }
+            });
 
-        return back()->with('success', 'Payroll semua user berhasil dibuat');
+        return back()->with('success', 'Payroll semua pegawai dan guru berhasil dibuat');
     }
 
     public function show(int $id)
@@ -107,6 +120,7 @@ class PayrollController extends Controller
         return response()->json([
             'id' => $payroll->id,
             'nama' => $payroll->user->name ?? '-',
+            'jabatan' => $payroll->jabatan_snapshot ?: $payroll->user?->positions()->pluck('name')->implode(', '),
             'periode' => $payroll->periode,
             'total_gaji' => $payroll->total_gaji,
             'details' => $payroll->details->map(function ($d) {
@@ -122,5 +136,45 @@ class PayrollController extends Controller
     {
         Payroll::findOrFail($id)->delete();
         return back()->with('success', 'Payroll dihapus');
+    }
+
+    private function payrollUsers()
+    {
+        return User::with(['pegawai:id,user_id,nama,nip', 'guru:id,user_id,nama,nuptk'])
+            ->where(function ($query) {
+                $query->whereHas('pegawai')
+                    ->orWhereHas('guru');
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $this->payrollUserName($user),
+                'identifier' => $user->pegawai?->nip ?? $user->guru?->nuptk,
+                'type' => $user->guru ? 'Guru' : 'Pegawai',
+            ]);
+    }
+
+    private function payrollUserName(?User $user): string
+    {
+        if (! $user) {
+            return '-';
+        }
+
+        return $user->pegawai?->nama
+            ?? $user->guru?->nama
+            ?? $user->name
+            ?? '-';
+    }
+
+    private function ensurePayrollUser(User $user): void
+    {
+        if ($user->pegawai()->exists() || $user->guru()->exists()) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'user_id' => 'Payroll hanya bisa dibuat untuk pegawai atau guru.',
+        ]);
     }
 }

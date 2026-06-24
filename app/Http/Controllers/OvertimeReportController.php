@@ -15,7 +15,11 @@ class OvertimeReportController extends Controller
         $end = $request->input('end_date');
         $status = $request->input('status', 'all');
 
-        $query = Overtime::with('employee:id,nama,nip');
+        $query = Overtime::with([
+            'user:id,name,role',
+            'employee:id,user_id,nama,nip',
+            'teacher:id,user_id,nama,nuptk',
+        ]);
 
         if ($start && $end) {
             $query->whereBetween('tanggal', [$start, $end]);
@@ -45,8 +49,10 @@ class OvertimeReportController extends Controller
 
                 return [
                     'id' => $item->id,
-                    'pegawai_nama' => $item->employee?->nama ?? '-',
-                    'pegawai_nip' => $item->employee?->nip,
+                    'pegawai_nama' => ($item->user?->role === 'guru' ? $item->teacher?->nama : $item->employee?->nama)
+                        ?? $item->user?->name
+                        ?? '-',
+                    'pegawai_nip' => $item->employee?->nip ?? $item->teacher?->nuptk ?? null,
                     'tanggal' => $item->tanggal?->format('Y-m-d'),
                     'jam_mulai' => substr((string) $item->jam_mulai, 0, 5),
                     'jam_selesai' => substr((string) $item->jam_selesai, 0, 5),

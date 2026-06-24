@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\PositionAllowance;
@@ -56,7 +55,7 @@ class PositionAllowanceController extends Controller
     public function destroy(PositionAllowance $positionAllowance)
     {
         $positionAllowance->delete();
-
         return back()->with('success', 'Tunjangan dihapus');
     }
+
 }

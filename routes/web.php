@@ -82,6 +82,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('overtime')->name('overtime.')->group(function () {
         Route::get('/', [LemburController::class, 'index'])->middleware('permission:overtime.view')->name('index');
+        Route::get('/history-data', [LemburController::class, 'history'])->middleware('permission:overtime.view')->name('history-data');
         Route::post('/', [LemburController::class, 'store'])->middleware('permission:overtime.create')->name('store');
         Route::put('/{lembur}', [LemburController::class, 'update'])->middleware('permission:overtime.edit')->name('update');
         Route::delete('/{lembur}', [LemburController::class, 'destroy'])->middleware('permission:overtime.delete')->name('destroy');

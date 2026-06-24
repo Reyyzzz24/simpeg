@@ -22,7 +22,7 @@ class Employee extends Model
 
     public function overtimes()
     {
-        return $this->hasMany(Overtime::class, 'pegawai_id');
+        return $this->hasMany(Overtime::class, 'pegawai_id', 'user_id');
     }
 
     public function position()
@@ -39,5 +39,9 @@ class Employee extends Model
         if (!$up || empty($up->position_ids)) return collect();
 
         return Position::whereIn('id', $up->position_ids)->get();
+    }
+    public function profile()
+    {
+        return $this->hasOne(EmployeeProfile::class);
     }
 }

@@ -1,8 +1,16 @@
 import { useForm } from '@inertiajs/react';
-import { Plus, Trash2 } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { Check, ChevronsUpDown, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { route } from 'ziggy-js';
 import { Button } from '@/components/ui/button';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 import {
     Dialog,
     DialogContent,
@@ -14,6 +22,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -21,6 +34,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 type AmountType = 'fixed' | 'percentage' | 'formula';
 type FormulaType =
@@ -66,6 +80,7 @@ export default function AdjustmentModal({
     record,
 }: Props) {
     const isEdit = useMemo(() => !!(record && record.length > 0), [record]);
+    const [userSearchOpen, setUserSearchOpen] = useState(false);
 
     const { data, setData, post, put, processing, reset, clearErrors } =
         useForm<{ user_id: string; periode: string; items: AdjustmentItem[] }>({
@@ -214,6 +229,15 @@ export default function AdjustmentModal({
         return 'Nominal';
     };
 
+    const selectedUser = users?.find(
+        (user) => String(user.id) === String(data.user_id),
+    );
+
+    const formatUserOption = (user: any) =>
+        `${user.type ? `[${user.type}] ` : ''}${user.name ?? '-'}${
+            user.identifier ? ` - ${user.identifier}` : ''
+        }`;
+
     return (
         <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
             <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
@@ -244,25 +268,75 @@ export default function AdjustmentModal({
                         </div>
                         <div className="space-y-2">
                             <Label>Karyawan</Label>
-                            <Select
-                                value={data.user_id || ''}
-                                onValueChange={(v) => setData('user_id', v)}
-                                disabled={isEdit}
+                            <Popover
+                                open={userSearchOpen}
+                                onOpenChange={setUserSearchOpen}
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih Karyawan" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {users?.map((u) => (
-                                        <SelectItem
-                                            key={u.id}
-                                            value={String(u.id)}
-                                        >
-                                            {u.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        role="combobox"
+                                        disabled={isEdit}
+                                        className="w-full justify-between font-normal"
+                                    >
+                                        <span className="truncate">
+                                            {selectedUser
+                                                ? formatUserOption(selectedUser)
+                                                : 'Pilih pegawai/guru'}
+                                        </span>
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Cari pegawai/guru..." />
+                                        <CommandList>
+                                            <CommandEmpty>
+                                                Tidak ditemukan.
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                                {users?.map((user) => (
+                                                    <CommandItem
+                                                        key={user.id}
+                                                        value={formatUserOption(
+                                                            user,
+                                                        )}
+                                                        onSelect={() => {
+                                                            setData(
+                                                                'user_id',
+                                                                String(user.id),
+                                                            );
+                                                            setUserSearchOpen(
+                                                                false,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                'mr-2 h-4 w-4',
+                                                                String(
+                                                                    data.user_id,
+                                                                ) ===
+                                                                    String(
+                                                                        user.id,
+                                                                    )
+                                                                    ? 'opacity-100'
+                                                                    : 'opacity-0',
+                                                            )}
+                                                        />
+                                                        <span className="truncate">
+                                                            {formatUserOption(
+                                                                user,
+                                                            )}
+                                                        </span>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
 

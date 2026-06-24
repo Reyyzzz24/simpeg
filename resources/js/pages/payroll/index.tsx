@@ -224,7 +224,7 @@ export default function PayrollIndex({
                             onRegenerate: handleRegenerate,
                         })}
                         searchKey="user_name"
-                        searchPlaceholder="Cari nama pegawai..."
+                        searchPlaceholder="Cari nama pegawai/guru..."
                         actions={
                             <div className="flex flex-wrap items-center gap-2">
                                 <Input

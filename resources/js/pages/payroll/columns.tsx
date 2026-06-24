@@ -25,6 +25,11 @@ export const baseColumns: ColumnDef<any>[] = [
         cell: ({ row }) => row.original.user?.name ?? '-',
     },
     {
+        accessorKey: 'user_type',
+        header: 'Jenis',
+        cell: ({ row }) => row.original.user_type ?? '-',
+    },
+    {
         accessorKey: 'periode',
         header: 'Periode',
     },

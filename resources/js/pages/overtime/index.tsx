@@ -1,12 +1,13 @@
+import { Head, useForm } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
+import { useState } from 'react';
 import DeleteConfirmDialog from '@/components/delete-confirm-dialog';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
-import { useState } from 'react';
 import { getColumns } from './columns';
+import HistoryOvertimeModal from './partials/history-overtime-modal';
 import LemburCreateModal from './partials/lembur-create-modal';
 import LemburEditModal from './partials/lembur-edit-modal';
 
@@ -15,10 +16,11 @@ const breadcrumbs = [
     { title: 'Lembur', href: '/overtime' },
 ];
 
-export default function OvertimeIndex({ lembur, pegawai }: any) {
+export default function OvertimeIndex({ lembur, users }: any) {
     const [createOpen, setCreateOpen] = useState(false);
     const [editRecord, setEditRecord] = useState<any | null>(null);
     const [deleteRecord, setDeleteRecord] = useState<any | null>(null);
+    const [historyRecord, setHistoryRecord] = useState<any | null>(null);
     const { delete: destroy, processing } = useForm();
 
     const confirmDelete = () => {
@@ -44,18 +46,17 @@ export default function OvertimeIndex({ lembur, pegawai }: any) {
                 />
 
                 <div className="rounded-xl border bg-card p-6 shadow-sm">
-                    <h2 className="mb-4 text-lg font-semibold">
-                        Data Lembur
-                    </h2>
+                    <h2 className="mb-4 text-lg font-semibold">Data Lembur</h2>
 
                     <DataTable
                         data={lembur ?? []}
                         columns={getColumns({
                             onEdit: setEditRecord,
                             onDelete: setDeleteRecord,
+                            onHistory: setHistoryRecord,
                         })}
                         searchKey="pegawai_nama"
-                        searchPlaceholder="Cari nama pegawai..."
+                        searchPlaceholder="Cari nama pegawai/guru..."
                         actions={
                             <Button onClick={() => setCreateOpen(true)}>
                                 <Plus className="mr-2 size-4" />
@@ -68,7 +69,7 @@ export default function OvertimeIndex({ lembur, pegawai }: any) {
                 <LemburCreateModal
                     open={createOpen}
                     setOpen={setCreateOpen}
-                    pegawai={pegawai ?? []}
+                    users={users ?? []}
                 />
 
                 <LemburEditModal
@@ -79,7 +80,13 @@ export default function OvertimeIndex({ lembur, pegawai }: any) {
                         }
                     }}
                     record={editRecord}
-                    pegawai={pegawai ?? []}
+                    users={users ?? []}
+                />
+
+                <HistoryOvertimeModal
+                    isOpen={!!historyRecord}
+                    onClose={() => setHistoryRecord(null)}
+                    record={historyRecord}
                 />
 
                 <DeleteConfirmDialog

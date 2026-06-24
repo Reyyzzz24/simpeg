@@ -53,8 +53,11 @@ class SSOController extends Controller
                         'name' => $user->name ?: $name,
                         'email_verified_at' => $user->email_verified_at ?: now(),
                         'portal_id' => $user->portal_id ?: $portalId,
-                        'role' => $portalRole ?? $user->role ?? 'user',
                     ]);
+
+                    if ($portalRole && ($user->role === 'user' || empty($user->role))) {
+                        $user->update(['role' => $portalRole]);
+                    }
                 }
 
                 $this->syncPortalRole($user);

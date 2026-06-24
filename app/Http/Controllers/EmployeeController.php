@@ -17,11 +17,12 @@ class EmployeeController extends Controller
     public function index(Request $request)
     {
         // Ambil semua pegawai beserta relasi user dan position. Do not eager-load `positions` collection.
-        $employees = Employee::with(['user', 'position'])
+        $employees = Employee::with(['user', 'position', 'profile'])
             ->orderBy('nama', 'asc')
             ->get()
             ->map(function ($item) {
                 $positions = $item->getPositions();
+                $p = $item->profile; // $p bisa berupa objek atau null
 
                 return [
                     'id' => $item->id,
@@ -34,9 +35,10 @@ class EmployeeController extends Controller
                     'nip' => $item->nip,
                     'sub_role' => $item->sub_role,
                     'status_kerja' => $item->status_kerja,
-                    'position_ids' => $positions->pluck('id')->map(function ($v) { return (string) $v; })->toArray(),
-                    'positions' => $positions->map(function ($p) { return ['id' => $p->id, 'name' => $p->name]; }),
+                    'position_ids' => $positions->pluck('id')->map(fn($v) => (string) $v)->toArray(),
+                    'positions' => $positions->map(fn($pos) => ['id' => $pos->id, 'name' => $pos->name]),
                     'jabatan' => $positions->first()->name ?? $item->position->name ?? '-',
+                    'profile' => $p,
                 ];
             });
 
@@ -49,6 +51,7 @@ class EmployeeController extends Controller
 
     public function update(Request $request, Employee $employee)
     {
+        // 1. Validasi
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
             'tempat_tanggal_lahir' => 'nullable|string|max:255',
@@ -61,8 +64,12 @@ class EmployeeController extends Controller
             'status_kerja' => ['required', Rule::in(Employee::STATUS_KERJA_OPTIONS)],
             'position_ids' => 'nullable|array',
             'position_ids.*' => 'exists:positions,id',
+
+            // Validasi kolom profil (semuanya nullable agar fleksibel)
+            'profile' => 'nullable|array',
         ]);
 
+        // 2. Update Data Utama (Employees)
         $updateData = [
             'nama' => $validated['nama'],
             'tempat_tanggal_lahir' => $validated['tempat_tanggal_lahir'] ?? null,
@@ -81,13 +88,28 @@ class EmployeeController extends Controller
 
         $employee->update($updateData);
 
-        if ($employee->user) {
-            $employee->user->update([
-                'name' => $validated['nama'],
-            ]);
+        // 3. Update/Create Profil (EmployeeProfile)
+        // Kita langsung ambil dari $request->profile agar tidak perlu menulis satu per satu
+        if ($request->has('profile')) {
+            $profileData = $request->profile;
+
+            // Paksa nilai boolean menjadi false jika null atau tidak ada
+            $profileData['lisensi_kepala_sekolah'] = (bool) ($profileData['lisensi_kepala_sekolah'] ?? false);
+            $profileData['diklat_kepengawasan'] = (bool) ($profileData['diklat_kepengawasan'] ?? false);
+            $profileData['keahlian_braille'] = (bool) ($profileData['keahlian_braille'] ?? false);
+            $profileData['keahlian_bahasa_isyarat'] = (bool) ($profileData['keahlian_bahasa_isyarat'] ?? false);
+
+            $employee->profile()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                $profileData
+            );
         }
 
-        // persist to user_positions.position_ids JSON for the user
+        // 4. Update User & UserPosition
+        if ($employee->user) {
+            $employee->user->update(['name' => $validated['nama']]);
+        }
+
         if ($employee->user_id) {
             UserPosition::updateOrCreate(
                 ['user_id' => $employee->user_id],
@@ -95,7 +117,7 @@ class EmployeeController extends Controller
             );
         }
 
-        return back()->with('success', 'Employee berhasil diperbarui');
+        return back()->with('success', 'Data pegawai berhasil diperbarui');
     }
 
     public function destroy(Employee $employee)

@@ -47,6 +47,10 @@ export default function DetailPayrollModal({
                         Periode: {record.periode ?? '-'}
                     </p>
 
+                    <p className="text-sm text-muted-foreground">
+                        Jabatan: {record.jabatan || '-'}
+                    </p>
+
                     <Badge className="uppercase mt-2">
                         {record.status ?? 'draft'} {/* ✅ fallback */}
                     </Badge>

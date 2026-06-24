@@ -27,6 +27,16 @@ class Overtime extends Model
 
     public function employee()
     {
-        return $this->belongsTo(Employee::class, 'pegawai_id');
+        return $this->belongsTo(Employee::class, 'pegawai_id', 'user_id');
+    }
+
+    public function teacher()
+    {
+        return $this->belongsTo(Teacher::class, 'pegawai_id', 'user_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'pegawai_id');
     }
 }

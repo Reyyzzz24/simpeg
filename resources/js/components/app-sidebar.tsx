@@ -204,7 +204,7 @@ export function AppSidebar() {
                                             <SidebarMenuSubButton asChild>
                                                 <Link href={route('payroll.index')}>
                                                     <FileText className="h-4 w-4" />
-                                                    <span>Data Payroll</span>
+                                                    <span>Manajemen Payroll</span>
                                                 </Link>
                                             </SidebarMenuSubButton>
                                         </SidebarMenuSubItem>

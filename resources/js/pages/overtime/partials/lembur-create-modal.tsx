@@ -11,29 +11,40 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { useState } from 'react';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
-type PegawaiOption = {
+type UserOption = {
     id: number;
     nama: string;
     nip?: string | null;
+    tipe?: string | null;
 };
 
 type Props = {
     open: boolean;
     setOpen: (value: boolean) => void;
-    pegawai: PegawaiOption[];
+    users: UserOption[];
 };
 
-export default function LemburCreateModal({ open, setOpen, pegawai }: Props) {
+export default function LemburCreateModal({ open, setOpen, users }: Props) {
+    const [userSearchOpen, setUserSearchOpen] = useState(false);
     const { data, setData, post, processing, errors, reset, clearErrors } =
         useForm({
             pegawai_id: '',
@@ -43,6 +54,15 @@ export default function LemburCreateModal({ open, setOpen, pegawai }: Props) {
             tugas: '',
             is_approved: false,
         });
+
+    const selectedUser = users.find(
+        (user) => String(user.id) === String(data.pegawai_id),
+    );
+
+    const formatUserOption = (user: UserOption) =>
+        `${user.tipe ? `[${user.tipe}] ` : ''}${user.nama ?? '-'}${
+            user.nip ? ` - ${user.nip}` : ''
+        }`;
 
     const close = () => {
         setOpen(false);
@@ -66,34 +86,81 @@ export default function LemburCreateModal({ open, setOpen, pegawai }: Props) {
                     <DialogHeader>
                         <DialogTitle>Tambah Lembur</DialogTitle>
                         <DialogDescription>
-                            Catat tugas lembur pegawai beserta jam pelaksanaannya.
+                            Catat tugas lembur pegawai/guru beserta jam pelaksanaannya.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <div className="grid gap-2">
-                            <Label>Pegawai</Label>
-                            <Select
-                                value={data.pegawai_id}
-                                onValueChange={(value) =>
-                                    setData('pegawai_id', value)
-                                }
+                            <Label>Pegawai/Guru</Label>
+                            <Popover
+                                open={userSearchOpen}
+                                onOpenChange={setUserSearchOpen}
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih pegawai" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {pegawai.map((item) => (
-                                        <SelectItem
-                                            key={item.id}
-                                            value={String(item.id)}
-                                        >
-                                            {item.nama}
-                                            {item.nip ? ` - ${item.nip}` : ''}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        role="combobox"
+                                        className="w-full justify-between font-normal"
+                                    >
+                                        <span className="truncate">
+                                            {selectedUser
+                                                ? formatUserOption(selectedUser)
+                                                : 'Pilih pegawai/guru'}
+                                        </span>
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Cari pegawai/guru..." />
+                                        <CommandList>
+                                            <CommandEmpty>
+                                                Tidak ditemukan.
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                                {users.map((item) => (
+                                                    <CommandItem
+                                                        key={item.id}
+                                                        value={formatUserOption(
+                                                            item,
+                                                        )}
+                                                        onSelect={() => {
+                                                            setData(
+                                                                'pegawai_id',
+                                                                String(item.id),
+                                                            );
+                                                            setUserSearchOpen(
+                                                                false,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                'mr-2 h-4 w-4',
+                                                                String(
+                                                                    data.pegawai_id,
+                                                                ) ===
+                                                                    String(
+                                                                        item.id,
+                                                                    )
+                                                                    ? 'opacity-100'
+                                                                    : 'opacity-0',
+                                                            )}
+                                                        />
+                                                        <span className="truncate">
+                                                            {formatUserOption(
+                                                                item,
+                                                            )}
+                                                        </span>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                             <InputError message={errors.pegawai_id} />
                         </div>
 

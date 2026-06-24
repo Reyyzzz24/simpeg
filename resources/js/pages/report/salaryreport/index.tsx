@@ -7,6 +7,18 @@ import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { getSalaryReportColumns } from './columns';
 
@@ -17,10 +29,19 @@ const breadcrumbs = [
 
 export default function SalaryReportIndex({ data, stats, filters }: any) {
     const [periode, setPeriode] = useState(filters?.periode ?? '');
+    const [role, setRole] = useState(filters?.role ?? 'all');
+    const [filterOpen, setFilterOpen] = useState(false);
 
     const handleFilter = () => {
-        router.get('/report/salary', { periode });
+        router.get('/report/salary', { periode, role });
+        setFilterOpen(false);
     };
+
+    const getReportParams = () =>
+        new URLSearchParams({
+            periode,
+            role,
+        });
 
     return (
         <>
@@ -103,27 +124,65 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                         searchPlaceholder="Cari nama..."
                         actions={
                             <div className="flex items-center gap-2">
-                                <Input
-                                    type="month"
-                                    value={periode}
-                                    onChange={(event) =>
-                                        setPeriode(event.target.value)
-                                    }
-                                    className="w-44"
-                                />
-                                <Button
-                                    variant="outline"
-                                    onClick={handleFilter}
+                                <Popover
+                                    open={filterOpen}
+                                    onOpenChange={setFilterOpen}
                                 >
-                                    <Filter className="mr-2 size-4" />
-                                    Filter
-                                </Button>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline">
+                                            <Filter className="mr-2 size-4" />
+                                            Filter
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                                Periode
+                                            </label>
+                                            <Input
+                                                type="month"
+                                                value={periode}
+                                                onChange={(event) =>
+                                                    setPeriode(event.target.value)
+                                                }
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                                Role
+                                            </label>
+                                            <Select
+                                                value={role}
+                                                onValueChange={setRole}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Role" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">
+                                                        Semua
+                                                    </SelectItem>
+                                                    <SelectItem value="pegawai">
+                                                        Pegawai
+                                                    </SelectItem>
+                                                    <SelectItem value="guru">
+                                                        Guru
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <Button
+                                            className="w-full"
+                                            onClick={handleFilter}
+                                        >
+                                            Terapkan Filter
+                                        </Button>
+                                    </PopoverContent>
+                                </Popover>
                                 <Button
                                     variant="outline"
                                     onClick={() => {
-                                        const params = new URLSearchParams({
-                                            periode: periode,
-                                        });
+                                        const params = getReportParams();
                                         window.location.href = `/report/salary/export?${params.toString()}`;
                                     }}
                                 >
@@ -133,7 +192,7 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                                 <Button
                                     variant="outline"
                                     onClick={() => {
-                                        const params = new URLSearchParams({ periode: periode });
+                                        const params = getReportParams();
                                         window.open(`/report/salary/print?${params.toString()}`, '_blank');
                                     }}
                                 >
@@ -144,6 +203,7 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                         }
                     />
                 </div>
+
             </div>
         </>
     );

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Payroll;
 use App\Services\PayrollService;
+use Illuminate\Validation\ValidationException;
 
 class PayrollAdjustmentController extends Controller
 {
@@ -23,7 +24,7 @@ class PayrollAdjustmentController extends Controller
             'payrolls' => Payroll::with('user')->latest()->get(),
             'stats' => [ /* data stats Anda */],
 
-            'users' => User::select('id', 'name')->get(),
+            'users' => $this->payrollUsers(),
             'components' => SalaryComponent::select('id', 'name')->get(),
         ]);
     }
@@ -53,6 +54,8 @@ class PayrollAdjustmentController extends Controller
             'items.*.amount' => 'required|numeric',
             'items.*.note' => 'nullable|string',
         ]);
+
+        $this->ensurePayrollUser((int) $validated['user_id']);
 
         PayrollAdjustment::where('user_id', $validated['user_id'])
             ->where('periode', $validated['periode'])
@@ -91,6 +94,8 @@ class PayrollAdjustmentController extends Controller
             'items.*.amount' => 'required|numeric',
             'items.*.note' => 'nullable|string',
         ]);
+
+        $this->ensurePayrollUser((int) $validated['user_id']);
 
         $adjustment = PayrollAdjustment::findOrFail($id);
 
@@ -137,7 +142,42 @@ class PayrollAdjustmentController extends Controller
         $user = User::with(['guru', 'pegawai'])->find($userId);
 
         if ($user) {
-            $this->payrollService->generate($user, $periode);
+            $this->payrollService->generate($user, $periode, false, false);
         }
+    }
+
+    private function payrollUsers()
+    {
+        return User::with(['pegawai:id,user_id,nama,nip', 'guru:id,user_id,nama,nuptk'])
+            ->where(function ($query) {
+                $query->whereHas('pegawai')
+                    ->orWhereHas('guru');
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->pegawai?->nama ?? $user->guru?->nama ?? $user->name,
+                'identifier' => $user->pegawai?->nip ?? $user->guru?->nuptk,
+                'type' => $user->guru ? 'Guru' : 'Pegawai',
+            ]);
+    }
+
+    private function ensurePayrollUser(int $userId): void
+    {
+        $isPayrollUser = User::whereKey($userId)
+            ->where(function ($query) {
+                $query->whereHas('pegawai')
+                    ->orWhereHas('guru');
+            })
+            ->exists();
+
+        if ($isPayrollUser) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'user_id' => 'Adjustment payroll hanya bisa dibuat untuk pegawai atau guru.',
+        ]);
     }
 }

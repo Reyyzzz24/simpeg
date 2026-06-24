@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from '@inertiajs/react'
+import { Check, ChevronsUpDown } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -9,9 +10,22 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 
 type Props = {
     open: boolean
@@ -22,6 +36,7 @@ type Props = {
 }
 
 export default function UserPositionFormModal({ open, setOpen, users, positions, record }: Props) {
+    const [userSearchOpen, setUserSearchOpen] = useState(false)
     const { data, setData, post, put, processing, reset, clearErrors } = useForm({
         user_id: '',
         // for create: allow multiple positions
@@ -60,6 +75,15 @@ export default function UserPositionFormModal({ open, setOpen, users, positions,
         }
     }
 
+    const selectedUser = users.find(
+        (user) => String(user.id) === String(data.user_id),
+    )
+
+    const formatUserOption = (user: any) =>
+        `${user.type ? `[${user.type}] ` : ''}${user.name ?? '-'}${
+            user.identifier ? ` - ${user.identifier}` : ''
+        }`
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent>
@@ -74,20 +98,65 @@ export default function UserPositionFormModal({ open, setOpen, users, positions,
                     <div className="space-y-4 py-2">
                         <div className="space-y-2">
                             <Label>User</Label>
-                            <Select
-                                value={data.user_id}
-                                onValueChange={(v) => setData('user_id', v)}
-                                disabled={!!record} // Biasanya user tidak diubah saat edit posisi
+                            <Popover
+                                open={userSearchOpen}
+                                onOpenChange={setUserSearchOpen}
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih User" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {users.map((u) => (
-                                        <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        role="combobox"
+                                        disabled={!!record}
+                                        className="w-full justify-between font-normal"
+                                    >
+                                        <span className="truncate">
+                                            {selectedUser
+                                                ? formatUserOption(selectedUser)
+                                                : 'Pilih user'}
+                                        </span>
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Cari user..." />
+                                        <CommandList>
+                                            <CommandEmpty>
+                                                Tidak ditemukan.
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                                {users.map((user) => (
+                                                    <CommandItem
+                                                        key={user.id}
+                                                        value={formatUserOption(user)}
+                                                        onSelect={() => {
+                                                            setData(
+                                                                'user_id',
+                                                                String(user.id),
+                                                            )
+                                                            setUserSearchOpen(false)
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                'mr-2 h-4 w-4',
+                                                                String(data.user_id) ===
+                                                                    String(user.id)
+                                                                    ? 'opacity-100'
+                                                                    : 'opacity-0',
+                                                            )}
+                                                        />
+                                                        <span className="truncate">
+                                                            {formatUserOption(user)}
+                                                        </span>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </div>
 
                         <div className="space-y-2">

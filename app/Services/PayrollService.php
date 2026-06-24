@@ -13,12 +13,18 @@ use App\Models\SalaryComponent;
 
 class PayrollService
 {
-    public function generate(User $user, string $periode)
-    {
+    public function generate(
+        User $user,
+        string $periode,
+        bool $carryForwardAdjustments = true,
+        bool $refreshPositionSnapshot = true
+    ) {
         $payroll = Payroll::updateOrCreate(
             ['user_id' => $user->id, 'periode' => $periode],
             ['total_gaji' => 0, 'status' => 'draft']
         );
+
+        $this->syncPositionSnapshot($payroll, $user, $refreshPositionSnapshot);
 
         $payroll->details()->delete();
         $total = 0;
@@ -107,6 +113,10 @@ class PayrollService
                 $total += $amount;
                 $this->addDetail($payroll, $allowance->component, $amount);
             }
+        }
+
+        if ($carryForwardAdjustments) {
+            $this->carryForwardPreviousAdjustments($user, $periode);
         }
 
         // LOGIKA ADJUSTMENT (BONUS/POTONGAN MANUAL)
@@ -292,13 +302,7 @@ class PayrollService
 
     private function getOvertimeCount(User $user, string $year, string $month): int
     {
-        $pegawaiId = $user->pegawai?->id;
-
-        if (! $pegawaiId) {
-            return 0;
-        }
-
-        return Overtime::where('pegawai_id', $pegawaiId)
+        return Overtime::where('pegawai_id', $user->id) // Tetap gunakan nama kolom database 'pegawai_id'
             ->whereYear('tanggal', $year)
             ->whereMonth('tanggal', $month)
             ->where('is_approved', true)
@@ -329,5 +333,59 @@ class PayrollService
 
                 return (int) $start->diffInMinutes($end);
             });
+    }
+
+    private function carryForwardPreviousAdjustments(User $user, string $periode): void
+    {
+        $hasCurrentAdjustments = PayrollAdjustment::where('user_id', $user->id)
+            ->where('periode', $periode)
+            ->exists();
+
+        if ($hasCurrentAdjustments) {
+            return;
+        }
+
+        $previousPeriode = PayrollAdjustment::where('user_id', $user->id)
+            ->where('periode', '<', $periode)
+            ->orderByDesc('periode')
+            ->value('periode');
+
+        if (! $previousPeriode) {
+            return;
+        }
+
+        $previousAdjustments = PayrollAdjustment::where('user_id', $user->id)
+            ->where('periode', $previousPeriode)
+            ->get();
+
+        foreach ($previousAdjustments as $adjustment) {
+            PayrollAdjustment::create([
+                'user_id' => $user->id,
+                'component_id' => $adjustment->component_id,
+                'amount_type' => $adjustment->amount_type,
+                'formula_type' => $adjustment->formula_type,
+                'formula_interval_minutes' => $adjustment->formula_interval_minutes,
+                'amount' => $adjustment->amount,
+                'note' => $adjustment->note,
+                'periode' => $periode,
+            ]);
+        }
+    }
+
+    private function syncPositionSnapshot(Payroll $payroll, User $user, bool $refreshPositionSnapshot): void
+    {
+        if (
+            ! $refreshPositionSnapshot
+            && ($payroll->jabatan_snapshot || ! empty($payroll->position_ids_snapshot))
+        ) {
+            return;
+        }
+
+        $positions = $user->positions()->get(['id', 'name']);
+
+        $payroll->update([
+            'jabatan_snapshot' => $positions->pluck('name')->implode(', '),
+            'position_ids_snapshot' => $positions->pluck('id')->values()->all(),
+        ]);
     }
 }

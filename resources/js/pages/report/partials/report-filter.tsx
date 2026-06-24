@@ -35,6 +35,7 @@ export default function ReportFilter({
     setEnd,
     onApply,
 }: Props) {
+    const [open, setOpen] = useState(false);
     const [openStart, setOpenStart] = useState(false);
     const [openEnd, setOpenEnd] = useState(false);
     // Local states to avoid applying changes immediately
@@ -49,7 +50,7 @@ export default function ReportFilter({
     }, [type, start, end]);
 
     return (
-        <Popover>
+        <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button variant="outline">
                     <Filter className="mr-2 size-4" />
@@ -58,85 +59,61 @@ export default function ReportFilter({
             </PopoverTrigger>
 
             <PopoverContent className="w-80 space-y-5">
+                <div className="space-y-5">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            Jenis Pegawai
+                        </label>
 
-                {/* TYPE */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Jenis Pegawai</label>
+                        <Select value={localType} onValueChange={setLocalType}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Pilih jenis pegawai" />
+                            </SelectTrigger>
 
-                    <Select value={localType} onValueChange={setLocalType}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Pilih jenis pegawai" />
-                        </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua</SelectItem>
+                                <SelectItem value="guru">Guru</SelectItem>
+                                <SelectItem value="pegawai">Pegawai</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                        <SelectContent>
-                            <SelectItem value="all">Semua</SelectItem>
-                            <SelectItem value="guru">Guru</SelectItem>
-                            <SelectItem value="pegawai">Pegawai</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            Tanggal Mulai
+                        </label>
+
+                        <input
+                            type="date"
+                            value={localStart}
+                            onChange={(e) => setLocalStart(e.target.value)}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            Tanggal Akhir
+                        </label>
+
+                        <input
+                            type="date"
+                            value={localEnd}
+                            onChange={(e) => setLocalEnd(e.target.value)}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        />
+                    </div>
                 </div>
 
-                {/* START DATE (Calendar) */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Tanggal Mulai</label>
-
-                    <Popover open={openStart} onOpenChange={setOpenStart}>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start">
-                                <CalendarIcon className="mr-2 size-4" />
-                                {localStart
-                                    ? format(new Date(localStart), 'dd MMM yyyy')
-                                    : 'Pilih tanggal'}
-                            </Button>
-                        </PopoverTrigger>
-
-                        <PopoverContent className="w-auto">
-                            <Calendar
-                                mode="single"
-                                selected={localStart ? new Date(localStart) : undefined}
-                                onSelect={(date) => {
-                                    if (!date) return;
-                                    setLocalStart(format(date, 'yyyy-MM-dd'));
-                                    setOpenStart(false);
-                                }}
-                            />
-                        </PopoverContent>
-                    </Popover>
-                </div>
-
-                {/* END DATE (Calendar) */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Tanggal Akhir</label>
-
-                    <Popover open={openEnd} onOpenChange={setOpenEnd}>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start">
-                                <CalendarIcon className="mr-2 size-4" />
-                                {localEnd
-                                    ? format(new Date(localEnd), 'dd MMM yyyy')
-                                    : 'Pilih tanggal'}
-                            </Button>
-                        </PopoverTrigger>
-
-                        <PopoverContent className="w-auto">
-                            <Calendar
-                                mode="single"
-                                selected={localEnd ? new Date(localEnd) : undefined}
-                                onSelect={(date) => {
-                                    if (!date) return;
-                                    setLocalEnd(format(date, 'yyyy-MM-dd'));
-                                    setOpenEnd(false);
-                                }}
-                            />
-                        </PopoverContent>
-                    </Popover>
-                </div>
-
-                {/* APPLY */}
                 <Button
                     className="w-full"
                     onClick={() => {
-                        onApply({ type: localType ?? 'all', start: localStart ?? '', end: localEnd ?? '' });
+                        onApply({
+                            type: localType ?? 'all',
+                            start: localStart ?? '',
+                            end: localEnd ?? '',
+                        });
+                        setOpen(false);
                     }}
                 >
                     Terapkan Filter

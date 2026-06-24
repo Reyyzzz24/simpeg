@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\UserPosition;
 use App\Models\User;
 use App\Models\Position;
+use Illuminate\Validation\ValidationException;
 
 class UserPositionController extends Controller
 {
@@ -36,7 +37,7 @@ class UserPositionController extends Controller
 
         return Inertia::render('user-position/index', [
             'data' => $data,
-            'users' => User::select('id', 'name')->get(),
+            'users' => $this->assignableUsers(),
             'positions' => Position::select('id', 'name')->get(),
         ]);
     }
@@ -46,19 +47,18 @@ class UserPositionController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'position_ids' => 'required|array',
             'position_ids.*' => 'exists:positions,id',
         ]);
 
-        $userId = $request->user_id;
-        $positionIds = $request->position_ids;
+        $this->ensureAssignableUser((int) $validated['user_id']);
 
         // store as single row per user with position_ids JSON
         UserPosition::updateOrCreate(
-            ['user_id' => $userId],
-            ['position_ids' => $positionIds]
+            ['user_id' => $validated['user_id']],
+            ['position_ids' => $validated['position_ids']]
         );
 
         // observer will sync Teacher/Employee rows
@@ -67,15 +67,17 @@ class UserPositionController extends Controller
     }
     public function update(Request $request, UserPosition $userPosition)
     {
-        $request->validate([
+        $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'position_ids' => 'required|array',
             'position_ids.*' => 'exists:positions,id',
         ]);
 
+        $this->ensureAssignableUser((int) $validated['user_id']);
+
         $userPosition->update([
-            'user_id' => $request->user_id,
-            'position_ids' => $request->position_ids,
+            'user_id' => $validated['user_id'],
+            'position_ids' => $validated['position_ids'],
         ]);
 
         // observer will sync Teacher/Employee rows
@@ -95,5 +97,40 @@ class UserPositionController extends Controller
         // observer will clear Teacher/Employee rows on delete
 
         return back()->with('success', 'Data berhasil dihapus');
+    }
+
+    private function assignableUsers()
+    {
+        return User::with(['pegawai:id,user_id,nama,nip', 'guru:id,user_id,nama,nuptk'])
+            ->where(function ($query) {
+                $query->whereHas('pegawai')
+                    ->orWhereHas('guru');
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->pegawai?->nama ?? $user->guru?->nama ?? $user->name,
+                'identifier' => $user->pegawai?->nip ?? $user->guru?->nuptk,
+                'type' => $user->guru ? 'Guru' : 'Pegawai',
+            ]);
+    }
+
+    private function ensureAssignableUser(int $userId): void
+    {
+        $isAssignable = User::whereKey($userId)
+            ->where(function ($query) {
+                $query->whereHas('pegawai')
+                    ->orWhereHas('guru');
+            })
+            ->exists();
+
+        if ($isAssignable) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'user_id' => 'Jabatan hanya bisa diberikan untuk pegawai atau guru.',
+        ]);
     }
 }

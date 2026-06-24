@@ -46,4 +46,13 @@ class Teacher extends Model
 
         return Position::whereIn('id', $up->position_ids)->get();
     }
+    public function profile()
+    {
+        return $this->hasOne(TeacherProfile::class);
+    }
+
+    public function overtimes()
+    {
+        return $this->hasMany(Overtime::class, 'pegawai_id', 'user_id');
+    }
 }

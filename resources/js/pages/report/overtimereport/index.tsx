@@ -8,6 +8,11 @@ import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -26,6 +31,7 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
     const [start, setStart] = useState(filters?.start_date ?? '');
     const [end, setEnd] = useState(filters?.end_date ?? '');
     const [status, setStatus] = useState(filters?.status ?? 'all');
+    const [filterOpen, setFilterOpen] = useState(false);
 
     const handleFilter = () => {
         router.get('/report/overtime', {
@@ -33,6 +39,7 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
             end_date: end,
             status,
         });
+        setFilterOpen(false);
     };
 
     return (
@@ -126,48 +133,73 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
                         searchPlaceholder="Cari nama pegawai..."
                         actions={
                             <div className="flex flex-wrap items-center gap-2">
-                                <Input
-                                    type="date"
-                                    value={start}
-                                    onChange={(event) =>
-                                        setStart(event.target.value)
-                                    }
-                                    className="w-40"
-                                />
-                                <Input
-                                    type="date"
-                                    value={end}
-                                    onChange={(event) =>
-                                        setEnd(event.target.value)
-                                    }
-                                    className="w-40"
-                                />
-                                <Select
-                                    value={status}
-                                    onValueChange={setStatus}
+                                <Popover
+                                    open={filterOpen}
+                                    onOpenChange={setFilterOpen}
                                 >
-                                    <SelectTrigger className="w-40">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            Semua
-                                        </SelectItem>
-                                        <SelectItem value="approved">
-                                            Disetujui
-                                        </SelectItem>
-                                        <SelectItem value="pending">
-                                            Menunggu
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    variant="outline"
-                                    onClick={handleFilter}
-                                >
-                                    <Filter className="mr-2 size-4" />
-                                    Filter
-                                </Button>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline">
+                                            <Filter className="mr-2 size-4" />
+                                            Filter
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                                Tanggal Mulai
+                                            </label>
+                                            <Input
+                                                type="date"
+                                                value={start}
+                                                onChange={(event) =>
+                                                    setStart(event.target.value)
+                                                }
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                                Tanggal Akhir
+                                            </label>
+                                            <Input
+                                                type="date"
+                                                value={end}
+                                                onChange={(event) =>
+                                                    setEnd(event.target.value)
+                                                }
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                                Status
+                                            </label>
+                                            <Select
+                                                value={status}
+                                                onValueChange={setStatus}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Status" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">
+                                                        Semua
+                                                    </SelectItem>
+                                                    <SelectItem value="approved">
+                                                        Disetujui
+                                                    </SelectItem>
+                                                    <SelectItem value="pending">
+                                                        Menunggu
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <Button
+                                            className="w-full"
+                                            onClick={handleFilter}
+                                        >
+                                            Terapkan Filter
+                                        </Button>
+                                    </PopoverContent>
+                                </Popover>
                                 <Button
                                     variant="outline"
                                     onClick={() => {
@@ -202,6 +234,7 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
                         }
                     />
                 </div>
+
             </div>
         </>
     );

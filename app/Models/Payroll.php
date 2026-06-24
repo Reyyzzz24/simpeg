@@ -6,7 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Payroll extends Model
 {
-    protected $fillable = ['user_id', 'periode', 'total_gaji'];
+    protected $fillable = [
+        'user_id',
+        'periode',
+        'total_gaji',
+        'jabatan_snapshot',
+        'position_ids_snapshot',
+    ];
+
+    protected $casts = [
+        'position_ids_snapshot' => 'array',
+    ];
 
     public function user()
     {
