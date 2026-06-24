@@ -16,6 +16,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
+          port: 65002
           script: |
             cd ~/domains/simpeg.smkkpdm.sch.id/public_html
 
