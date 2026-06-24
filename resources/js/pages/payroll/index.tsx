@@ -89,7 +89,6 @@ export default function PayrollIndex({
     };
 
     const handleDeleteAdjustment = (adjustments: any[]) => {
-        // Jika ingin hapus massal, simpan array-nya ke state
         setSelectedAdjustment(adjustments);
         setIsDeleteDialogOpen(true);
     };
