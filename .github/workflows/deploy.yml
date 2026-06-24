@@ -20,7 +20,8 @@ jobs:
           script: |
             cd ~/domains/simpeg.smkkpdm.sch.id/public_html
 
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
 
             composer install --no-dev --optimize-autoloader
 
