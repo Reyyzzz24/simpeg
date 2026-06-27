@@ -12,6 +12,7 @@ export type TodayPresence = {
     jam_normatif_teori: number | null;
     jam_produktif_teori: number | null;
     jam_produktif_praktik: number | null;
+    jam_eskul: number | null;
     ada_piket: boolean;
     durasi_hadir_menit: number | null;
     selisih_jam_ajar_menit: number | null;
@@ -32,6 +33,7 @@ export type SelfPresence = {
     jam_normatif_teori: number | null;
     jam_produktif_teori: number | null;
     jam_produktif_praktik: number | null;
+    jam_eskul: number | null;
     ada_piket: boolean;
     durasi_hadir_menit: number | null;
     selisih_jam_ajar_menit: number | null;
@@ -65,16 +67,23 @@ export const formatTeachingHours = (presence: {
     jam_normatif_teori?: number | null;
     jam_produktif_teori?: number | null;
     jam_produktif_praktik?: number | null;
+    jam_eskul?: number | null;
     total_jam_ajar?: number | null;
     jenis_ajar?: string | null;
 }) => {
     const normatifTeori = Number(presence.jam_normatif_teori ?? 0);
     const produktifTeori = Number(presence.jam_produktif_teori ?? 0);
     const produktifPraktik = Number(presence.jam_produktif_praktik ?? 0);
+    const eskul = Number(presence.jam_eskul ?? 0);
     const teori = Number(presence.jam_teori ?? 0);
     const praktik = Number(presence.jam_praktik ?? 0);
 
-    if (normatifTeori > 0 || produktifTeori > 0 || produktifPraktik > 0) {
+    if (
+        normatifTeori > 0 ||
+        produktifTeori > 0 ||
+        produktifPraktik > 0 ||
+        eskul > 0
+    ) {
         const parts: string[] = [];
 
         if (normatifTeori > 0) {
@@ -89,7 +98,11 @@ export const formatTeachingHours = (presence: {
             parts.push(`Produktif praktik ${produktifPraktik}j`);
         }
 
-        const total = normatifTeori + produktifTeori + produktifPraktik;
+        if (eskul > 0) {
+            parts.push(`Eskul ${eskul}j`);
+        }
+
+        const total = normatifTeori + produktifTeori + produktifPraktik + eskul;
 
         return `${parts.join(' + ')} (${total}j total)`;
     }

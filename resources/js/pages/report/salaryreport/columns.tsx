@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import { formatReportLabel } from '../lib/format-label';
 
 export const getSalaryReportColumns = (): ColumnDef<any>[] => [
     {
@@ -8,6 +9,7 @@ export const getSalaryReportColumns = (): ColumnDef<any>[] => [
     {
         accessorKey: 'role',
         header: 'Role',
+        cell: ({ row }) => formatReportLabel(row.original.role),
     },
     {
         accessorKey: 'jabatan',
@@ -28,7 +30,10 @@ export const getSalaryReportColumns = (): ColumnDef<any>[] => [
                 <div className="flex flex-col">
                     {details.map((d: any, i: number) => (
                         // Tambahkan border-b dan padding vertikal untuk garis pemisah
-                        <div key={i} className="text-sm py-1 border-b last:border-0">
+                        <div
+                            key={i}
+                            className="border-b py-1 text-sm last:border-0"
+                        >
                             {d.komponen}
                         </div>
                     ))}
@@ -42,9 +47,12 @@ export const getSalaryReportColumns = (): ColumnDef<any>[] => [
         cell: ({ row }) => {
             const details = row.original.details ?? [];
             return (
-                <div className="flex flex-col items-center w-full">
+                <div className="flex w-full flex-col items-center">
                     {details.map((d: any, i: number) => (
-                        <div key={i} className="text-sm py-1 border-b w-full text-center last:border-0">
+                        <div
+                            key={i}
+                            className="w-full border-b py-1 text-center text-sm last:border-0"
+                        >
                             Rp {Number(d.amount ?? 0).toLocaleString('id-ID')}
                         </div>
                     ))}
@@ -52,8 +60,8 @@ export const getSalaryReportColumns = (): ColumnDef<any>[] => [
             );
         },
         meta: {
-            className: "text-center"
-        }
+            className: 'text-center',
+        },
     },
     {
         accessorKey: 'total_gaji',

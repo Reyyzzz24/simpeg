@@ -61,6 +61,12 @@ class PresentReportController extends Controller
                     $row['jenis_ajar'] = $item->jenis_ajar;
                     $row['jam_teori'] = $item->jam_teori;
                     $row['jam_praktik'] = $item->jam_praktik;
+                    $row['jam_normatif_teori'] = $item->jam_normatif_teori;
+                    $row['jam_produktif_teori'] = $item->jam_produktif_teori;
+                    $row['jam_produktif_praktik'] = $item->jam_produktif_praktik;
+                    $row['total_jam_produktif'] = (float) ($item->jam_produktif_teori ?? 0)
+                        + (float) ($item->jam_produktif_praktik ?? 0);
+                    $row['jam_eskul'] = $item->jam_eskul;
                     $row['ada_piket'] = (bool) $item->ada_piket;
                     $row['selisih_jam_ajar_menit'] = $item->selisih_jam_ajar_menit;
                     $row['status_validasi_ajar'] = $item->status_validasi_ajar;

@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/badge';
 import type { ColumnDef } from '@tanstack/react-table';
+import { Badge } from '@/components/ui/badge';
 
 export const getOvertimeReportColumns = (): ColumnDef<any>[] => [
     {
@@ -43,9 +43,7 @@ export const getOvertimeReportColumns = (): ColumnDef<any>[] => [
         header: 'Status',
         cell: ({ row }) =>
             row.original.is_approved ? (
-                <Badge className="bg-green-100 text-green-700">
-                    Disetujui
-                </Badge>
+                <Badge className="bg-green-100 text-green-700">Disetujui</Badge>
             ) : (
                 <Badge variant="secondary">Menunggu</Badge>
             ),

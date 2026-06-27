@@ -44,13 +44,15 @@ export default function TeacherCheckoutView({
             todayPresence.jam_produktif_praktik?.toString() ??
             todayPresence.jam_praktik?.toString() ??
             '',
+        jam_eskul: todayPresence.jam_eskul?.toString() ?? '',
         ada_piket: todayPresence.ada_piket ?? false,
     });
 
     const totalJamAjar =
         Number(form.data.jam_normatif_teori || 0) +
         Number(form.data.jam_produktif_teori || 0) +
-        Number(form.data.jam_produktif_praktik || 0);
+        Number(form.data.jam_produktif_praktik || 0) +
+        Number(form.data.jam_eskul || 0);
     const previewTeachingMinutes = totalJamAjar * 60;
     const previewDifference =
         todayPresence.durasi_hadir_menit === null
@@ -144,7 +146,7 @@ export default function TeacherCheckoutView({
                             field yang tidak diajar.
                         </p>
 
-                        <div className="mt-6 grid gap-4 md:grid-cols-3">
+                        <div className="mt-6 grid gap-4 md:grid-cols-4">
                             <div className="space-y-2">
                                 <Label htmlFor="jam_normatif_teori">
                                     Normatif teori
@@ -216,6 +218,28 @@ export default function TeacherCheckoutView({
                                     message={form.errors.jam_produktif_praktik}
                                 />
                             </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="jam_eskul">
+                                    Jam mengajar eskul
+                                </Label>
+                                <Input
+                                    id="jam_eskul"
+                                    type="number"
+                                    min="0"
+                                    max="24"
+                                    step="0.5"
+                                    value={form.data.jam_eskul}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'jam_eskul',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="Kosongkan jika tidak ada"
+                                />
+                                <InputError message={form.errors.jam_eskul} />
+                            </div>
                         </div>
 
                         <div className="mt-4 rounded-lg border bg-slate-50 p-4">
@@ -239,6 +263,9 @@ export default function TeacherCheckoutView({
                                         form.data.jam_produktif_praktik || 0,
                                     ) > 0
                                         ? `${form.data.jam_produktif_praktik}j produktif praktik`
+                                        : null,
+                                    Number(form.data.jam_eskul || 0) > 0
+                                        ? `${form.data.jam_eskul}j eskul`
                                         : null,
                                 ]
                                     .filter(Boolean)

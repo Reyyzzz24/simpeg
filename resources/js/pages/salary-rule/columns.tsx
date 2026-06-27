@@ -99,9 +99,12 @@ export const getColumns = (opts: any): ColumnDef<any>[] => [
                                               : c.formula_type ===
                                                   'jam_mengajar_produktif_praktik'
                                                 ? 'Formula Produktif Praktik'
-                                                : c.formula_type === 'piket'
-                                                  ? 'Formula Piket'
-                                                  : 'Formula Hadir'
+                                                : c.formula_type ===
+                                                    'jam_mengajar_eskul'
+                                                  ? 'Formula Jam Eskul'
+                                                  : c.formula_type === 'piket'
+                                                    ? 'Formula Piket'
+                                                    : 'Formula Hadir'
                                 : c.amount_type}
                         </Badge>
                     ))}

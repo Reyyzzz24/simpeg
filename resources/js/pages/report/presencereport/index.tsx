@@ -3,12 +3,12 @@ import { Clock, Download, Users } from 'lucide-react';
 import { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import AppLayout from '@/layouts/app-layout';
 import ReportFilter from '../partials/report-filter';
 import { getReportColumns } from './columns';
-import { Button } from '@/components/ui/button';
 
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -126,8 +126,15 @@ export default function PresenceReportIndex({ data, filters }: any) {
                                 <Button
                                     variant="outline"
                                     onClick={() => {
-                                        const params = new URLSearchParams({ type, start_date: start, end_date: end });
-                                        window.open(`/report/presence/print?${params.toString()}`, '_blank');
+                                        const params = new URLSearchParams({
+                                            type,
+                                            start_date: start,
+                                            end_date: end,
+                                        });
+                                        window.open(
+                                            `/report/presence/print?${params.toString()}`,
+                                            '_blank',
+                                        );
                                     }}
                                 >
                                     <Download className="mr-2 size-4" />

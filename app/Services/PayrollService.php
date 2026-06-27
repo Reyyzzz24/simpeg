@@ -220,6 +220,12 @@ class PayrollService
                 return (float) ($rate * $totalJamProduktifPraktik);
             }
 
+            if ($formulaType === 'jam_mengajar_eskul') {
+                $totalJamEskul = $this->getTotalTeachingHoursByColumn($user, $year, $month, 'jam_eskul');
+
+                return (float) ($rate * $totalJamEskul);
+            }
+
             if ($formulaType === 'piket') {
                 $jumlahPiket = Attendance::where('user_id', $user->id)
                     ->whereYear('tanggal', $year)
@@ -299,6 +305,12 @@ class PayrollService
             $totalJamProduktifPraktik = $this->getTotalTeachingHoursByColumn($user, $year, $month, 'jam_produktif_praktik');
 
             return " ({$totalJamProduktifPraktik} jam praktik produktif x Rp" . number_format($rate, 0, ',', '.') . ")";
+        }
+
+        if ($formulaType === 'jam_mengajar_eskul') {
+            $totalJamEskul = $this->getTotalTeachingHoursByColumn($user, $year, $month, 'jam_eskul');
+
+            return " ({$totalJamEskul} jam eskul x Rp" . number_format($rate, 0, ',', '.') . ")";
         }
 
         if ($formulaType === 'piket') {

@@ -1,5 +1,6 @@
-import { Badge } from '@/components/ui/badge';
 import type { ColumnDef } from '@tanstack/react-table';
+import { Badge } from '@/components/ui/badge';
+import { formatReportLabel } from '../lib/format-label';
 
 export const getReportColumns = (type: string = 'all'): ColumnDef<any>[] => {
     const columns: ColumnDef<any>[] = [
@@ -7,33 +8,35 @@ export const getReportColumns = (type: string = 'all'): ColumnDef<any>[] => {
             accessorKey: 'nama',
             header: 'Nama',
         },
-    {
-        accessorKey: 'role',
-        header: 'Role',
-    },
-    {
-        accessorKey: 'tanggal',
-        header: 'Tanggal',
-    },
-    {
-        accessorKey: 'jam_masuk',
-        header: 'Masuk',
-    },
-    {
-        accessorKey: 'jam_pulang',
-        header: 'Pulang',
-    },
-    {
-        accessorKey: 'jam_kerja',
-        header: 'Jam Kerja',
-        cell: ({ row }) =>
-            `${Number(row.original.jam_kerja ?? 0).toFixed(2)} jam`,
-    },
+        {
+            accessorKey: 'role',
+            header: 'Role',
+            cell: ({ row }) => formatReportLabel(row.original.role),
+        },
+        {
+            accessorKey: 'tanggal',
+            header: 'Tanggal',
+        },
+        {
+            accessorKey: 'jam_masuk',
+            header: 'Masuk',
+        },
+        {
+            accessorKey: 'jam_pulang',
+            header: 'Pulang',
+        },
+        {
+            accessorKey: 'jam_kerja',
+            header: 'Jam Kerja',
+            cell: ({ row }) =>
+                `${Number(row.original.jam_kerja ?? 0).toFixed(2)} jam`,
+        },
         {
             accessorKey: 'status_disiplin',
             header: 'Status',
             cell: ({ row }) => {
                 const status = row.original.status_disiplin ?? '-';
+                const statusKey = String(status).toLowerCase();
                 const colorMap: Record<string, string> = {
                     hadir: 'bg-green-100 text-green-700',
                     terlambat: 'bg-orange-100 text-orange-700',
@@ -44,9 +47,11 @@ export const getReportColumns = (type: string = 'all'): ColumnDef<any>[] => {
 
                 return (
                     <Badge
-                        className={`capitalize ${colorMap[status] ?? 'bg-gray-100 text-gray-700'}`}
+                        className={
+                            colorMap[statusKey] ?? 'bg-gray-100 text-gray-700'
+                        }
                     >
-                        {status}
+                        {formatReportLabel(status)}
                     </Badge>
                 );
             },
@@ -65,16 +70,37 @@ export const getReportColumns = (type: string = 'all'): ColumnDef<any>[] => {
             {
                 accessorKey: 'jenis_ajar',
                 header: 'Jenis Ajar',
+                cell: ({ row }) => formatReportLabel(row.original.jenis_ajar),
             },
             {
-                accessorKey: 'jam_teori',
-                header: 'Jam Teori',
-                cell: ({ row }) => `${Number(row.original.jam_teori ?? 0).toFixed(2)} jam`,
+                accessorKey: 'jam_normatif_teori',
+                header: 'Normatif Teori',
+                cell: ({ row }) =>
+                    `${Number(row.original.jam_normatif_teori ?? 0).toFixed(2)} jam`,
             },
             {
-                accessorKey: 'jam_praktik',
-                header: 'Jam Praktik',
-                cell: ({ row }) => `${Number(row.original.jam_praktik ?? 0).toFixed(2)} jam`,
+                accessorKey: 'jam_produktif_teori',
+                header: 'Produktif Teori',
+                cell: ({ row }) =>
+                    `${Number(row.original.jam_produktif_teori ?? 0).toFixed(2)} jam`,
+            },
+            {
+                accessorKey: 'jam_produktif_praktik',
+                header: 'Produktif Praktik',
+                cell: ({ row }) =>
+                    `${Number(row.original.jam_produktif_praktik ?? 0).toFixed(2)} jam`,
+            },
+            {
+                accessorKey: 'total_jam_produktif',
+                header: 'Total Produktif',
+                cell: ({ row }) =>
+                    `${Number(row.original.total_jam_produktif ?? 0).toFixed(2)} jam`,
+            },
+            {
+                accessorKey: 'jam_eskul',
+                header: 'Eskul',
+                cell: ({ row }) =>
+                    `${Number(row.original.jam_eskul ?? 0).toFixed(2)} jam`,
             },
             {
                 accessorKey: 'ada_piket',
@@ -84,13 +110,15 @@ export const getReportColumns = (type: string = 'all'): ColumnDef<any>[] => {
             {
                 accessorKey: 'selisih_jam_ajar_menit',
                 header: 'Selisih Jam Ajar (menit)',
-                cell: ({ row }) => `${Number(row.original.selisih_jam_ajar_menit ?? 0)} menit`,
+                cell: ({ row }) =>
+                    `${Number(row.original.selisih_jam_ajar_menit ?? 0)} menit`,
             },
             {
                 accessorKey: 'status_validasi_ajar',
                 header: 'Status Validasi Ajar',
                 cell: ({ row }) => {
                     const status = row.original.status_validasi_ajar ?? '-';
+                    const statusKey = String(status).toLowerCase();
                     const colorMap: Record<string, string> = {
                         valid: 'bg-green-100 text-green-700',
                         pending: 'bg-yellow-100 text-yellow-700',
@@ -99,13 +127,16 @@ export const getReportColumns = (type: string = 'all'): ColumnDef<any>[] => {
 
                     return (
                         <Badge
-                            className={`capitalize ${colorMap[status] ?? 'bg-gray-100 text-gray-700'}`}
+                            className={
+                                colorMap[statusKey] ??
+                                'bg-gray-100 text-gray-700'
+                            }
                         >
-                            {status}
+                            {formatReportLabel(status)}
                         </Badge>
                     );
                 },
-            }
+            },
         );
     }
 

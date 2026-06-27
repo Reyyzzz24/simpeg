@@ -191,7 +191,7 @@ class ReportExportController extends Controller
                 fputcsv($out, [
                     $no,
                     $p->user->name ?? '-',
-                    $p->user->role ?? '-',
+                    $this->formatReportLabel($p->user->role ?? '-'),
                     $jabatan,
                     $p->periode,
                     $detailsStr,
@@ -235,7 +235,7 @@ class ReportExportController extends Controller
             return [
                 'id' => $p->id,
                 'nama' => $p->user->name ?? '-',
-                'role' => $p->user->role ?? '-',
+                'role' => $this->formatReportLabel($p->user->role ?? '-'),
                 'jabatan' => $p->jabatan_snapshot
                     ?: implode(', ', $p->user->positions()->pluck('name')->toArray()),
                 'periode' => $p->periode,
@@ -276,7 +276,7 @@ class ReportExportController extends Controller
         $callback = function () use ($data) {
             $out = fopen('php://output', 'w');
             fputs($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['No', 'Nama', 'Role', 'Tanggal', 'Jam Masuk', 'Jam Pulang', 'Status Disiplin', 'Jam Kerja', 'Total Jam Ajar', 'Jenis Ajar', 'Jam Teori', 'Jam Praktik', 'Ada Piket', 'Selisih Jam Ajar (menit)', 'Status Validasi Ajar']);
+            fputcsv($out, ['No', 'Nama', 'Role', 'Tanggal', 'Jam Masuk', 'Jam Pulang', 'Status Disiplin', 'Jam Kerja', 'Total Jam Ajar', 'Jenis Ajar', 'Normatif Teori', 'Produktif Teori', 'Produktif Praktik', 'Total Produktif', 'Eskul', 'Ada Piket', 'Selisih Jam Ajar (menit)', 'Status Validasi Ajar']);
 
             $no = 1;
             foreach ($data as $item) {
@@ -296,19 +296,22 @@ class ReportExportController extends Controller
                 fputcsv($out, [
                     $no,
                     $item->user->name ?? '-',
-                    $item->user->role ?? '-',
+                    $this->formatReportLabel($item->user->role ?? '-'),
                     $item->tanggal,
                     $item->jam_masuk,
                     $item->jam_pulang,
-                    $item->status_disiplin,
+                    $this->formatReportLabel($item->status_disiplin),
                     round($jamKerja, 2),
                     $item->total_jam_ajar ?? '',
-                    $item->jenis_ajar ?? '',
-                    $item->jam_teori ?? '',
-                    $item->jam_praktik ?? '',
+                    $this->formatReportLabel($item->jenis_ajar ?? ''),
+                    $item->jam_normatif_teori ?? '',
+                    $item->jam_produktif_teori ?? '',
+                    $item->jam_produktif_praktik ?? '',
+                    (float) ($item->jam_produktif_teori ?? 0) + (float) ($item->jam_produktif_praktik ?? 0),
+                    $item->jam_eskul ?? '',
                     isset($item->ada_piket) ? ($item->ada_piket ? 'Ya' : 'Tidak') : '',
                     $item->selisih_jam_ajar_menit ?? '',
-                    $item->status_validasi_ajar ?? '',
+                    $this->formatReportLabel($item->status_validasi_ajar ?? ''),
                 ]);
 
                 $no++;
@@ -355,27 +358,46 @@ class ReportExportController extends Controller
             $row = [
                 'id' => $item->id,
                 'nama' => $item->user->name ?? '-',
-                'role' => $item->user->role ?? '-',
+                'role' => $this->formatReportLabel($item->user->role ?? '-'),
                 'tanggal' => $item->tanggal,
                 'jam_masuk' => $item->jam_masuk,
                 'jam_pulang' => $item->jam_pulang,
-                'status_disiplin' => $item->status_disiplin,
+                'status_disiplin' => $this->formatReportLabel($item->status_disiplin),
                 'jam_kerja' => $jamKerja,
             ];
 
             if (isset($item->user) && ($item->user->role === 'guru')) {
                 $row['total_jam_ajar'] = $item->total_jam_ajar;
-                $row['jenis_ajar'] = $item->jenis_ajar;
+                $row['jenis_ajar'] = $this->formatReportLabel($item->jenis_ajar);
                 $row['jam_teori'] = $item->jam_teori;
                 $row['jam_praktik'] = $item->jam_praktik;
+                $row['jam_normatif_teori'] = $item->jam_normatif_teori;
+                $row['jam_produktif_teori'] = $item->jam_produktif_teori;
+                $row['jam_produktif_praktik'] = $item->jam_produktif_praktik;
+                $row['total_jam_produktif'] = (float) ($item->jam_produktif_teori ?? 0)
+                    + (float) ($item->jam_produktif_praktik ?? 0);
+                $row['jam_eskul'] = $item->jam_eskul;
                 $row['ada_piket'] = (bool) $item->ada_piket;
                 $row['selisih_jam_ajar_menit'] = $item->selisih_jam_ajar_menit;
-                $row['status_validasi_ajar'] = $item->status_validasi_ajar;
+                $row['status_validasi_ajar'] = $this->formatReportLabel($item->status_validasi_ajar);
             }
 
             return $row;
         });
 
         return Inertia::render('report/prints/PresencePrint', ['data' => $data]);
+    }
+
+    private function formatReportLabel(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return '-';
+        }
+
+        return Str::of((string) $value)
+            ->replace('_', ' ')
+            ->lower()
+            ->title()
+            ->toString();
     }
 }

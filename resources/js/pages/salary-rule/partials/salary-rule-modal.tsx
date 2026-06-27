@@ -29,6 +29,7 @@ type FormulaType =
     | 'jam_mengajar_normatif_teori'
     | 'jam_mengajar_produktif_teori'
     | 'jam_mengajar_produktif_praktik'
+    | 'jam_mengajar_eskul'
     | 'piket';
 
 type RuleComponentForm = {
@@ -366,9 +367,12 @@ export default function SalaryRuleModal({ open, setOpen, components }: Props) {
                                                                       'jam_mengajar_produktif_praktik'
                                                                     ? 'Nominal/Jam Produktif Praktik'
                                                                     : component.formula_type ===
-                                                                        'piket'
-                                                                      ? 'Nominal/Piket'
-                                                                      : 'Tarif/Hadir'
+                                                                        'jam_mengajar_eskul'
+                                                                      ? 'Nominal/Jam Eskul'
+                                                                      : component.formula_type ===
+                                                                          'piket'
+                                                                        ? 'Nominal/Piket'
+                                                                        : 'Tarif/Hadir'
                                                     : 'Nilai'
                                             }
                                         />
@@ -420,6 +424,9 @@ export default function SalaryRuleModal({ open, setOpen, components }: Props) {
                                                         <SelectItem value="jam_mengajar_produktif_praktik">
                                                             Jam Produktif
                                                             Praktik
+                                                        </SelectItem>
+                                                        <SelectItem value="jam_mengajar_eskul">
+                                                            Jam Eskul
                                                         </SelectItem>
                                                         <SelectItem value="piket">
                                                             Piket
@@ -474,9 +481,12 @@ export default function SalaryRuleModal({ open, setOpen, components }: Props) {
                                                                   'jam_mengajar_produktif_praktik'
                                                                 ? '* Otomatis: nominal dikali total jam praktik produktif per bulan.'
                                                                 : component.formula_type ===
-                                                                    'piket'
-                                                                  ? '* Otomatis: nominal dikali frekuensi piket di periode ini.'
-                                                                  : "* Otomatis: nominal dikali total status 'hadir' di absensi."}
+                                                                    'jam_mengajar_eskul'
+                                                                  ? '* Otomatis: nominal dikali total jam eskul per bulan.'
+                                                                  : component.formula_type ===
+                                                                      'piket'
+                                                                    ? '* Otomatis: nominal dikali frekuensi piket di periode ini.'
+                                                                    : "* Otomatis: nominal dikali total status 'hadir' di absensi."}
                                             </p>
                                         </div>
                                     )}

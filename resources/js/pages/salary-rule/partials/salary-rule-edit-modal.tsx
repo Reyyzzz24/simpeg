@@ -26,6 +26,7 @@ type FormulaType =
     | 'jam_mengajar_normatif_teori'
     | 'jam_mengajar_produktif_teori'
     | 'jam_mengajar_produktif_praktik'
+    | 'jam_mengajar_eskul'
     | 'piket';
 
 type RuleComponentForm = {
@@ -345,6 +346,9 @@ export default function SalaryRuleEditModal({
                                                             Jam Produktif
                                                             Praktik
                                                         </SelectItem>
+                                                        <SelectItem value="jam_mengajar_eskul">
+                                                            Jam Eskul
+                                                        </SelectItem>
                                                         <SelectItem value="piket">
                                                             Piket
                                                         </SelectItem>
@@ -398,9 +402,12 @@ export default function SalaryRuleEditModal({
                                                                   'jam_mengajar_produktif_praktik'
                                                                 ? 'Nominal dikali total jam praktik produktif per bulan.'
                                                                 : component.formula_type ===
-                                                                    'piket'
-                                                                  ? 'Nominal dikali frekuensi piket (jumlah hari ada_piket = true) di periode ini.'
-                                                                  : "Nominal dikali total status 'hadir' di absensi."}
+                                                                    'jam_mengajar_eskul'
+                                                                  ? 'Nominal dikali total jam eskul per bulan.'
+                                                                  : component.formula_type ===
+                                                                      'piket'
+                                                                    ? 'Nominal dikali frekuensi piket (jumlah hari ada_piket = true) di periode ini.'
+                                                                    : "Nominal dikali total status 'hadir' di absensi."}
                                             </p>
                                         </div>
                                     )}
