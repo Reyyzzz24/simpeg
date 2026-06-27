@@ -1,5 +1,13 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { Users, DollarSign, Plus, Settings2, FileText } from 'lucide-react';
+import {
+    Users,
+    DollarSign,
+    Plus,
+    Settings2,
+    FileText,
+    SlidersHorizontal,
+    Filter,
+} from 'lucide-react';
 import { useState } from 'react';
 import ConfirmDialog from '@/components/confirm-dialog';
 import { DashboardCard } from '@/components/dashboard-card';
@@ -9,6 +17,19 @@ import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { getPayrollColumns } from './columns';
 import AdjustmentModal from './partials/adjustment-modal';
@@ -35,13 +56,17 @@ export default function PayrollIndex({
     const [openAdjustment, setOpenAdjustment] = useState(false);
     const [selectedAdjustment, setSelectedAdjustment] = useState<any[]>([]);
     const [periode, setPeriode] = useState(filters?.periode ?? '');
+    const [role, setRole] = useState(filters?.role ?? 'all');
 
     const { delete: destroy, processing } = useForm();
 
     const handleFilter = () => {
         router.get(
             '/payroll',
-            { periode },
+            {
+                periode: periode || undefined,
+                role: role !== 'all' ? role : undefined,
+            },
             {
                 preserveState: true,
                 preserveScroll: true,
@@ -51,6 +76,7 @@ export default function PayrollIndex({
 
     const resetFilter = () => {
         setPeriode('');
+        setRole('all');
         router.get(
             '/payroll',
             {},
@@ -60,6 +86,8 @@ export default function PayrollIndex({
             },
         );
     };
+
+    const hasActiveFilter = Boolean(filters?.periode || filters?.role);
 
     const handleRegenerate = (record: any) => {
         setRegenerateRecord(record);
@@ -225,22 +253,85 @@ export default function PayrollIndex({
                         searchPlaceholder="Cari nama pegawai/guru..."
                         actions={
                             <div className="flex flex-wrap items-center gap-2">
-                                <Input
-                                    type="month"
-                                    value={periode}
-                                    onChange={(event) =>
-                                        setPeriode(event.target.value)
-                                    }
-                                    className="w-44"
-                                />
-                                <Button variant="outline" onClick={handleFilter}>
-                                    Filter
-                                </Button>
-                                {filters?.periode && (
-                                    <Button variant="ghost" onClick={resetFilter}>
-                                        Reset
-                                    </Button>
-                                )}
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline">
+                                            <Filter />
+                                            Filter
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        align="end"
+                                        className="w-80"
+                                    >
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h3 className="text-sm font-semibold">
+                                                    Filter Payroll
+                                                </h3>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Pilih periode dan role yang
+                                                    ingin ditampilkan.
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="periode-filter">
+                                                    Periode
+                                                </Label>
+                                                <Input
+                                                    id="periode-filter"
+                                                    type="month"
+                                                    value={periode}
+                                                    onChange={(event) =>
+                                                        setPeriode(
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Role</Label>
+                                                <Select
+                                                    value={role}
+                                                    onValueChange={setRole}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Pilih role" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="all">
+                                                            Semua role
+                                                        </SelectItem>
+                                                        <SelectItem value="guru">
+                                                            Guru
+                                                        </SelectItem>
+                                                        <SelectItem value="pegawai">
+                                                            Pegawai
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    onClick={resetFilter}
+                                                    type="button"
+                                                >
+                                                    Reset
+                                                </Button>
+                                                <Button
+                                                    onClick={handleFilter}
+                                                    type="button"
+                                                >
+                                                    Terapkan
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
                                 <Button
                                     onClick={handleAddAdjustment}
                                     variant="outline"

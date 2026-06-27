@@ -22,6 +22,7 @@ class PayrollController extends Controller
     public function index(Request $request)
     {
         $periode = $request->input('periode');
+        $role = $request->input('role');
 
         $query = Payroll::with(['user.pegawai', 'user.guru', 'adjustments.component'])
             ->whereHas('user', function ($query) {
@@ -31,6 +32,14 @@ class PayrollController extends Controller
 
         if ($periode) {
             $query->where('periode', $periode);
+        }
+
+        if (in_array($role, ['guru', 'pegawai'], true)) {
+            $query->whereHas('user', function ($query) use ($role) {
+                $role === 'guru'
+                    ? $query->whereHas('guru')
+                    : $query->whereHas('pegawai');
+            });
         }
 
         $payrolls = $query->latest()->get();
@@ -47,6 +56,7 @@ class PayrollController extends Controller
                 ],
                 'user_id' => $item->user_id,
                 'user_type' => $item->user?->guru ? 'Guru' : 'Pegawai',
+                'jabatan' => $item->jabatan_snapshot ?: $item->user?->positions()->pluck('name')->implode(', '),
                 'periode' => $item->periode,
                 'total_gaji' => $item->total_gaji,
 
@@ -73,7 +83,10 @@ class PayrollController extends Controller
 
         return Inertia::render('payroll/index', [
             'payrolls' => $data,
-            'filters' => ['periode' => $periode],
+            'filters' => [
+                'periode' => $periode,
+                'role' => in_array($role, ['guru', 'pegawai'], true) ? $role : null,
+            ],
             'stats' => [
                 'total' => $payrolls->count(),
                 'total_gaji' => $payrolls->sum('total_gaji'),
