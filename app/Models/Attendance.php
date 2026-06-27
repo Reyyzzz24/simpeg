@@ -19,6 +19,9 @@ class Attendance extends Model
         'jenis_ajar',
         'jam_teori',
         'jam_praktik',
+        'jam_normatif_teori',
+        'jam_produktif_teori',
+        'jam_produktif_praktik',
         'ada_piket',
         'durasi_hadir_menit',
         'selisih_jam_ajar_menit',
@@ -30,6 +33,9 @@ class Attendance extends Model
         return [
             'jam_teori' => 'float',
             'jam_praktik' => 'float',
+            'jam_normatif_teori' => 'float',
+            'jam_produktif_teori' => 'float',
+            'jam_produktif_praktik' => 'float',
             'ada_piket' => 'boolean',
         ];
     }

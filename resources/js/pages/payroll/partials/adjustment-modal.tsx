@@ -43,6 +43,9 @@ type FormulaType =
     | 'lembur'
     | 'jam_mengajar_teori'
     | 'jam_mengajar_praktik'
+    | 'jam_mengajar_normatif_teori'
+    | 'jam_mengajar_produktif_teori'
+    | 'jam_mengajar_produktif_praktik'
     | 'piket';
 
 type AdjustmentItem = {
@@ -185,10 +188,22 @@ export default function AdjustmentModal({
 
             if (item.formula_type === 'jam_mengajar_praktik') {
                 return 'Nominal/Jam Praktik';
-                }
+            }
 
-                if (item.formula_type === 'piket') {
-                    return 'Nominal per Piket';
+            if (item.formula_type === 'jam_mengajar_normatif_teori') {
+                return 'Nominal/Jam Normatif Teori';
+            }
+
+            if (item.formula_type === 'jam_mengajar_produktif_teori') {
+                return 'Nominal/Jam Produktif Teori';
+            }
+
+            if (item.formula_type === 'jam_mengajar_produktif_praktik') {
+                return 'Nominal/Jam Produktif Praktik';
+            }
+
+            if (item.formula_type === 'piket') {
+                return 'Nominal per Piket';
             }
 
             return 'Tarif/Hadir';
@@ -219,9 +234,21 @@ export default function AdjustmentModal({
                 return 'Nominal per Jam Praktik';
             }
 
-                if (item.formula_type === 'piket') {
-                    return 'Nominal per Piket';
-                }
+            if (item.formula_type === 'jam_mengajar_normatif_teori') {
+                return 'Nominal per Jam Normatif Teori';
+            }
+
+            if (item.formula_type === 'jam_mengajar_produktif_teori') {
+                return 'Nominal per Jam Produktif Teori';
+            }
+
+            if (item.formula_type === 'jam_mengajar_produktif_praktik') {
+                return 'Nominal per Jam Produktif Praktik';
+            }
+
+            if (item.formula_type === 'piket') {
+                return 'Nominal per Piket';
+            }
 
             return 'Tarif per Hadir';
         }
@@ -234,8 +261,7 @@ export default function AdjustmentModal({
     );
 
     const formatUserOption = (user: any) =>
-        `${user.type ? `[${user.type}] ` : ''}${user.name ?? '-'}${
-            user.identifier ? ` - ${user.identifier}` : ''
+        `${user.type ? `[${user.type}] ` : ''}${user.name ?? '-'}${user.identifier ? ` - ${user.identifier}` : ''
         }`;
 
     return (
@@ -377,11 +403,7 @@ export default function AdjustmentModal({
                                     <Select
                                         value={item.component_id}
                                         onValueChange={(v) =>
-                                            updateItem(
-                                                index,
-                                                'component_id',
-                                                v,
-                                            )
+                                            updateItem(index, 'component_id', v)
                                         }
                                     >
                                         <SelectTrigger>
@@ -482,15 +504,20 @@ export default function AdjustmentModal({
                                                     <SelectItem value="lembur">
                                                         Lembur
                                                     </SelectItem>
-                                                    <SelectItem value="jam_mengajar_teori">
-                                                        Jam Mengajar Teori
+                                                    {/* <SelectItem value="jam_mengajar_teori">Jam Mengajar Teori</SelectItem> */}
+                                                    {/* <SelectItem value="jam_mengajar_praktik">Jam Mengajar Praktik</SelectItem> */}
+                                                    <SelectItem value="jam_mengajar_normatif_teori">
+                                                        Jam Normatif Teori
                                                     </SelectItem>
-                                                    <SelectItem value="jam_mengajar_praktik">
-                                                        Jam Mengajar Praktik
+                                                    <SelectItem value="jam_mengajar_produktif_teori">
+                                                        Jam Produktif Teori
                                                     </SelectItem>
-                                                        <SelectItem value="piket">
-                                                            Piket
-                                                        </SelectItem>
+                                                    <SelectItem value="jam_mengajar_produktif_praktik">
+                                                        Jam Produktif Praktik
+                                                    </SelectItem>
+                                                    <SelectItem value="piket">
+                                                        Piket
+                                                    </SelectItem>
                                                 </SelectContent>
                                             </Select>
 
@@ -517,26 +544,38 @@ export default function AdjustmentModal({
                                                 placeholder="Menit per nominal"
                                             />
                                         </div>
-                                                                                <p className="text-[10px] leading-tight text-blue-600 italic">
-                                                                                        {item.formula_type === 'jam_kerja'
-                                                                                                ? '* Otomatis: total menit kerja dibagi interval menit lalu dikali nominal.'
-                                                                                                : item.formula_type === 'lembur'
-                                                                                                    ? '* Otomatis: nominal dikali jumlah lembur yang disetujui di periode ini.'
-                                                                                                    : item.formula_type === 'jam_mengajar_teori'
-                                                                                                        ? '* Otomatis: nominal dikali total jam teori per bulan dari absensi guru.'
-                                                                                                        : item.formula_type === 'jam_mengajar_praktik'
-                                                                                                            ? '* Otomatis: nominal dikali total jam praktik per bulan dari absensi guru.'
-                                                                                                            : item.formula_type === 'piket'
-                                                                                                                ? '* Otomatis: nominal dikali frekuensi piket (jumlah hari ada_piket = true) di periode ini.'
-                                                                                                                : "* Otomatis: nominal dikali total status 'hadir' di absensi."}
-                                                                                </p>
+                                        <p className="text-[10px] leading-tight text-blue-600 italic">
+                                            {item.formula_type === 'jam_kerja'
+                                                ? '* Otomatis: total menit kerja dibagi interval menit lalu dikali nominal.'
+                                                : item.formula_type === 'lembur'
+                                                    ? '* Otomatis: nominal dikali jumlah lembur yang disetujui di periode ini.'
+                                                    : item.formula_type ===
+                                                        'jam_mengajar_teori'
+                                                        ? '* Otomatis: nominal dikali total jam teori per bulan dari absensi guru.'
+                                                        : item.formula_type ===
+                                                            'jam_mengajar_praktik'
+                                                            ? '* Otomatis: nominal dikali total jam praktik per bulan dari absensi guru.'
+                                                            : item.formula_type ===
+                                                                'jam_mengajar_normatif_teori'
+                                                                ? '* Otomatis: nominal dikali total jam teori normatif per bulan.'
+                                                                : item.formula_type ===
+                                                                    'jam_mengajar_produktif_teori'
+                                                                    ? '* Otomatis: nominal dikali total jam teori produktif per bulan.'
+                                                                    : item.formula_type ===
+                                                                        'jam_mengajar_produktif_praktik'
+                                                                        ? '* Otomatis: nominal dikali total jam praktik produktif per bulan.'
+                                                                        : item.formula_type ===
+                                                                            'piket'
+                                                                            ? '* Otomatis: nominal dikali frekuensi piket (jumlah hari ada_piket = true) di periode ini.'
+                                                                            : "* Otomatis: nominal dikali total status 'hadir' di absensi."}
+                                        </p>
                                     </div>
                                 )}
 
                                 {item.amount_type === 'percentage' && (
                                     <p className="text-[10px] leading-tight text-slate-500 italic">
-                                        * Persentase dihitung dari default amount
-                                        komponen gaji.
+                                        * Persentase dihitung dari default
+                                        amount komponen gaji.
                                     </p>
                                 )}
 
@@ -572,8 +611,8 @@ export default function AdjustmentModal({
                             {processing
                                 ? 'Menyimpan...'
                                 : isEdit
-                                  ? 'Simpan Perubahan'
-                                  : 'Tambah Baru'}
+                                    ? 'Simpan Perubahan'
+                                    : 'Tambah Baru'}
                         </Button>
                     </DialogFooter>
                 </form>

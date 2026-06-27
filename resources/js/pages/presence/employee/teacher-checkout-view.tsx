@@ -24,15 +24,33 @@ export default function TeacherCheckoutView({
     targetUserId,
     returnTo = '/presence/self',
 }: Props) {
+    const isProduktifTeacher = user.sub_role === 'produktif';
+
     const form = useForm({
         user_id: targetUserId ?? null,
-        jam_teori: todayPresence.jam_teori?.toString() ?? '',
-        jam_praktik: todayPresence.jam_praktik?.toString() ?? '',
+        jam_normatif_teori:
+            todayPresence.jam_normatif_teori?.toString() ??
+            (!isProduktifTeacher
+                ? todayPresence.jam_teori?.toString()
+                : undefined) ??
+            '',
+        jam_produktif_teori:
+            todayPresence.jam_produktif_teori?.toString() ??
+            (isProduktifTeacher
+                ? todayPresence.jam_teori?.toString()
+                : undefined) ??
+            '',
+        jam_produktif_praktik:
+            todayPresence.jam_produktif_praktik?.toString() ??
+            todayPresence.jam_praktik?.toString() ??
+            '',
         ada_piket: todayPresence.ada_piket ?? false,
     });
 
     const totalJamAjar =
-        Number(form.data.jam_teori || 0) + Number(form.data.jam_praktik || 0);
+        Number(form.data.jam_normatif_teori || 0) +
+        Number(form.data.jam_produktif_teori || 0) +
+        Number(form.data.jam_produktif_praktik || 0);
     const previewTeachingMinutes = totalJamAjar * 60;
     const previewDifference =
         todayPresence.durasi_hadir_menit === null
@@ -57,8 +75,8 @@ export default function TeacherCheckoutView({
             <div className="flex flex-col gap-8 p-4 md:p-8">
                 <PageHeader
                     title="Absen Pulang Guru"
-                    subtitle={`${user.name} - ${user.role}`}
-                    description="Lengkapi rekap jam mengajar teori/praktik setelah scan QR atau Face Recognition pulang."
+                    subtitle={`${user.name} - ${user.role}${user.sub_role ? ` ${user.sub_role}` : ''}`}
+                    description="Lengkapi rekap jam mengajar normatif dan produktif setelah scan QR atau Face Recognition pulang."
                     gradient="bg-linear-to-r from-emerald-600 to-cyan-500"
                     icon={<BookOpenCheck className="size-20 text-white" />}
                 />
@@ -122,53 +140,81 @@ export default function TeacherCheckoutView({
                             Formulir Jam Mengajar
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Isi jam teori dan/atau praktik. Kosongkan field
-                            yang tidak diajar hari ini.
+                            Isi sesuai kategori jam mengajar hari ini. Kosongkan
+                            field yang tidak diajar.
                         </p>
 
-                        <div className="mt-6 grid gap-4 md:grid-cols-2">
+                        <div className="mt-6 grid gap-4 md:grid-cols-3">
                             <div className="space-y-2">
-                                <Label htmlFor="jam_teori">
-                                    Jam mengajar teori
+                                <Label htmlFor="jam_normatif_teori">
+                                    Normatif teori
                                 </Label>
                                 <Input
-                                    id="jam_teori"
+                                    id="jam_normatif_teori"
                                     type="number"
                                     min="0"
                                     max="24"
                                     step="0.5"
-                                    value={form.data.jam_teori}
+                                    value={form.data.jam_normatif_teori}
                                     onChange={(event) =>
                                         form.setData(
-                                            'jam_teori',
+                                            'jam_normatif_teori',
                                             event.target.value,
                                         )
                                     }
                                     placeholder="Contoh: 2"
                                 />
-                                <InputError message={form.errors.jam_teori} />
+                                <InputError
+                                    message={form.errors.jam_normatif_teori}
+                                />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="jam_praktik">
-                                    Jam mengajar praktik
+                                <Label htmlFor="jam_produktif_teori">
+                                    Produktif teori
                                 </Label>
                                 <Input
-                                    id="jam_praktik"
+                                    id="jam_produktif_teori"
                                     type="number"
                                     min="0"
                                     max="24"
                                     step="0.5"
-                                    value={form.data.jam_praktik}
+                                    value={form.data.jam_produktif_teori}
                                     onChange={(event) =>
                                         form.setData(
-                                            'jam_praktik',
+                                            'jam_produktif_teori',
                                             event.target.value,
                                         )
                                     }
                                     placeholder="Kosongkan jika tidak ada"
                                 />
-                                <InputError message={form.errors.jam_praktik} />
+                                <InputError
+                                    message={form.errors.jam_produktif_teori}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="jam_produktif_praktik">
+                                    Produktif praktik
+                                </Label>
+                                <Input
+                                    id="jam_produktif_praktik"
+                                    type="number"
+                                    min="0"
+                                    max="24"
+                                    step="0.5"
+                                    value={form.data.jam_produktif_praktik}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'jam_produktif_praktik',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="Kosongkan jika tidak ada"
+                                />
+                                <InputError
+                                    message={form.errors.jam_produktif_praktik}
+                                />
                             </div>
                         </div>
 
@@ -180,14 +226,23 @@ export default function TeacherCheckoutView({
                                 {totalJamAjar} jam
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">
-                                {Number(form.data.jam_teori || 0) > 0 &&
-                                Number(form.data.jam_praktik || 0) > 0
-                                    ? `${form.data.jam_teori}j teori + ${form.data.jam_praktik}j praktik`
-                                    : Number(form.data.jam_teori || 0) > 0
-                                      ? 'Hanya teori'
-                                      : Number(form.data.jam_praktik || 0) > 0
-                                        ? 'Hanya praktik'
-                                        : 'Belum diisi'}
+                                {[
+                                    Number(form.data.jam_normatif_teori || 0) >
+                                    0
+                                        ? `${form.data.jam_normatif_teori}j normatif teori`
+                                        : null,
+                                    Number(form.data.jam_produktif_teori || 0) >
+                                    0
+                                        ? `${form.data.jam_produktif_teori}j produktif teori`
+                                        : null,
+                                    Number(
+                                        form.data.jam_produktif_praktik || 0,
+                                    ) > 0
+                                        ? `${form.data.jam_produktif_praktik}j produktif praktik`
+                                        : null,
+                                ]
+                                    .filter(Boolean)
+                                    .join(' + ') || 'Belum diisi'}
                             </p>
                         </div>
 

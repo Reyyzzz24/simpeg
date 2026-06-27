@@ -25,7 +25,11 @@ type FormulaType =
     | 'jam_kerja'
     | 'lembur'
     | 'jam_mengajar_teori'
-    | 'jam_mengajar_praktik';
+    | 'jam_mengajar_praktik'
+    | 'jam_mengajar_normatif_teori'
+    | 'jam_mengajar_produktif_teori'
+    | 'jam_mengajar_produktif_praktik'
+    | 'piket';
 
 type RuleComponentForm = {
     id: number;
@@ -352,7 +356,19 @@ export default function SalaryRuleModal({ open, setOpen, components }: Props) {
                                                             : component.formula_type ===
                                                                 'jam_mengajar_praktik'
                                                               ? 'Nominal/Jam Praktik'
-                                                              : 'Tarif/Hadir'
+                                                              : component.formula_type ===
+                                                                  'jam_mengajar_normatif_teori'
+                                                                ? 'Nominal/Jam Normatif Teori'
+                                                                : component.formula_type ===
+                                                                    'jam_mengajar_produktif_teori'
+                                                                  ? 'Nominal/Jam Produktif Teori'
+                                                                  : component.formula_type ===
+                                                                      'jam_mengajar_produktif_praktik'
+                                                                    ? 'Nominal/Jam Produktif Praktik'
+                                                                    : component.formula_type ===
+                                                                        'piket'
+                                                                      ? 'Nominal/Piket'
+                                                                      : 'Tarif/Hadir'
                                                     : 'Nilai'
                                             }
                                         />
@@ -395,6 +411,19 @@ export default function SalaryRuleModal({ open, setOpen, components }: Props) {
                                                         <SelectItem value="jam_mengajar_praktik">
                                                             Jam Mengajar Praktik
                                                         </SelectItem>
+                                                        <SelectItem value="jam_mengajar_normatif_teori">
+                                                            Jam Normatif Teori
+                                                        </SelectItem>
+                                                        <SelectItem value="jam_mengajar_produktif_teori">
+                                                            Jam Produktif Teori
+                                                        </SelectItem>
+                                                        <SelectItem value="jam_mengajar_produktif_praktik">
+                                                            Jam Produktif
+                                                            Praktik
+                                                        </SelectItem>
+                                                        <SelectItem value="piket">
+                                                            Piket
+                                                        </SelectItem>
                                                     </SelectContent>
                                                 </Select>
 
@@ -435,7 +464,19 @@ export default function SalaryRuleModal({ open, setOpen, components }: Props) {
                                                         : component.formula_type ===
                                                             'jam_mengajar_praktik'
                                                           ? '* Otomatis: nominal dikali total jam praktik per bulan dari absensi guru.'
-                                                          : "* Otomatis: nominal dikali total status 'hadir' di absensi."}
+                                                          : component.formula_type ===
+                                                              'jam_mengajar_normatif_teori'
+                                                            ? '* Otomatis: nominal dikali total jam teori normatif per bulan.'
+                                                            : component.formula_type ===
+                                                                'jam_mengajar_produktif_teori'
+                                                              ? '* Otomatis: nominal dikali total jam teori produktif per bulan.'
+                                                              : component.formula_type ===
+                                                                  'jam_mengajar_produktif_praktik'
+                                                                ? '* Otomatis: nominal dikali total jam praktik produktif per bulan.'
+                                                                : component.formula_type ===
+                                                                    'piket'
+                                                                  ? '* Otomatis: nominal dikali frekuensi piket di periode ini.'
+                                                                  : "* Otomatis: nominal dikali total status 'hadir' di absensi."}
                                             </p>
                                         </div>
                                     )}

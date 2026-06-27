@@ -56,6 +56,9 @@ class PresenceController extends Controller
                 'jenis_ajar' => $item->jenis_ajar,
                 'jam_teori' => $item->jam_teori,
                 'jam_praktik' => $item->jam_praktik,
+                'jam_normatif_teori' => $item->jam_normatif_teori,
+                'jam_produktif_teori' => $item->jam_produktif_teori,
+                'jam_produktif_praktik' => $item->jam_produktif_praktik,
                 'ada_piket' => (bool) $item->ada_piket,
                 'durasi_hadir_menit' => $item->durasi_hadir_menit,
                 'selisih_jam_ajar_menit' => $item->selisih_jam_ajar_menit,
@@ -113,6 +116,9 @@ class PresenceController extends Controller
                 'jenis_ajar' => $presence?->jenis_ajar,
                 'jam_teori' => $presence?->jam_teori,
                 'jam_praktik' => $presence?->jam_praktik,
+                'jam_normatif_teori' => $presence?->jam_normatif_teori,
+                'jam_produktif_teori' => $presence?->jam_produktif_teori,
+                'jam_produktif_praktik' => $presence?->jam_produktif_praktik,
                 'ada_piket' => (bool) ($presence?->ada_piket ?? false),
                 'durasi_hadir_menit' => $presence?->durasi_hadir_menit,
                 'selisih_jam_ajar_menit' => $presence?->selisih_jam_ajar_menit,
@@ -154,7 +160,12 @@ class PresenceController extends Controller
             'jam_pulang' => 'nullable',
             'jenis_ajar' => 'required|in:teori,praktik,none',
             'total_jam_ajar' => 'nullable|integer|min:0|max:24',
+            'jam_normatif_teori' => 'nullable|numeric|min:0|max:24',
+            'jam_produktif_teori' => 'nullable|numeric|min:0|max:24',
+            'jam_produktif_praktik' => 'nullable|numeric|min:0|max:24',
         ]);
+
+        $validated = array_merge($validated, $this->resolveTeachingHours($validated));
 
         $validated = array_merge(
             $validated,
@@ -186,7 +197,19 @@ class PresenceController extends Controller
             'status_disiplin' => 'nullable|string',
             'jenis_ajar' => 'nullable|string',
             'total_jam_ajar' => 'nullable|integer|min:0|max:24',
+            'jam_normatif_teori' => 'nullable|numeric|min:0|max:24',
+            'jam_produktif_teori' => 'nullable|numeric|min:0|max:24',
+            'jam_produktif_praktik' => 'nullable|numeric|min:0|max:24',
         ]);
+
+        $validated = array_merge($validated, $this->resolveTeachingHours(array_merge([
+            'jam_teori' => $presence->jam_teori,
+            'jam_praktik' => $presence->jam_praktik,
+            'jam_normatif_teori' => $presence->jam_normatif_teori,
+            'jam_produktif_teori' => $presence->jam_produktif_teori,
+            'jam_produktif_praktik' => $presence->jam_produktif_praktik,
+            'total_jam_ajar' => $presence->total_jam_ajar,
+        ], $validated)));
 
         $validated = array_merge(
             $validated,
@@ -330,6 +353,15 @@ class PresenceController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        $duplicateUser = $this->findUserByFaceEmbedding($validated['face_embedding'], $user->id);
+
+        if ($duplicateUser) {
+            return redirect()->back()->with(
+                'error',
+                'Maaf, wajah ini sudah didaftarkan pada akun lain. Gunakan wajah sesuai pemilik akun masing-masing.'
+            );
+        }
+
         $user->update([
             'face_hash' => $validated['face_embedding'],
             'face_registered_at' => now(),
@@ -382,6 +414,9 @@ class PresenceController extends Controller
                 'jenis_ajar' => $presence->jenis_ajar === 'none' ? null : $presence->jenis_ajar,
                 'jam_teori' => $presence->jam_teori,
                 'jam_praktik' => $presence->jam_praktik,
+                'jam_normatif_teori' => $presence->jam_normatif_teori,
+                'jam_produktif_teori' => $presence->jam_produktif_teori,
+                'jam_produktif_praktik' => $presence->jam_produktif_praktik,
                 'ada_piket' => (bool) $presence->ada_piket,
                 'durasi_hadir_menit' => $presence->durasi_hadir_menit ?? $preview['durasi_hadir_menit'],
                 'selisih_jam_ajar_menit' => $presence->selisih_jam_ajar_menit ?? $preview['selisih_jam_ajar_menit'],
@@ -404,6 +439,9 @@ class PresenceController extends Controller
 
         $validated = $request->validate([
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'jam_normatif_teori' => ['nullable', 'numeric', 'min:0', 'max:24'],
+            'jam_produktif_teori' => ['nullable', 'numeric', 'min:0', 'max:24'],
+            'jam_produktif_praktik' => ['nullable', 'numeric', 'min:0', 'max:24'],
             'jam_teori' => ['nullable', 'numeric', 'min:0', 'max:24'],
             'jam_praktik' => ['nullable', 'numeric', 'min:0', 'max:24'],
             'ada_piket' => ['nullable', 'boolean'],
@@ -414,7 +452,18 @@ class PresenceController extends Controller
         if ($teachingData['total_jam_ajar'] <= 0) {
             return redirect()->route('presence.teacher-checkout', ['user_id' => $user->id])
                 ->withErrors([
-                    'jam_teori' => 'Isi minimal jam teori atau jam praktik.',
+                    'jam_normatif_teori' => 'Isi minimal satu jam mengajar.',
+                ])
+                ->withInput();
+        }
+
+        $totalJamAjarDecimal = (float) ($teachingData['jam_teori'] ?? 0)
+            + (float) ($teachingData['jam_praktik'] ?? 0);
+
+        if ($totalJamAjarDecimal > 24) {
+            return redirect()->route('presence.teacher-checkout', ['user_id' => $user->id])
+                ->withErrors([
+                    'jam_normatif_teori' => 'Total jam mengajar tidak boleh lebih dari 24 jam.',
                 ])
                 ->withInput();
         }
@@ -544,12 +593,18 @@ class PresenceController extends Controller
             : 'presence.self';
     }
 
-    private function findUserByFaceEmbedding(array $embedding): ?User
+    private function findUserByFaceEmbedding(array $embedding, ?int $exceptUserId = null): ?User
     {
         $bestUser = null;
         $bestDistance = PHP_FLOAT_MAX;
 
-        foreach (User::whereNotNull('face_hash')->get() as $user) {
+        $query = User::whereNotNull('face_hash');
+
+        if ($exceptUserId) {
+            $query->where('id', '!=', $exceptUserId);
+        }
+
+        foreach ($query->get() as $user) {
             $registeredDescriptor = is_array($user->face_hash)
                 ? $user->face_hash
                 : json_decode($user->face_hash, true);
@@ -607,8 +662,32 @@ class PresenceController extends Controller
 
     private function resolveTeachingHours(array $input): array
     {
-        $jamTeori = (float) ($input['jam_teori'] ?? 0);
-        $jamPraktik = (float) ($input['jam_praktik'] ?? 0);
+        $jamNormatifTeori = (float) ($input['jam_normatif_teori'] ?? 0);
+        $jamProduktifTeori = (float) ($input['jam_produktif_teori'] ?? 0);
+        $jamProduktifPraktik = (float) ($input['jam_produktif_praktik'] ?? 0);
+
+        if (
+            $jamNormatifTeori <= 0
+            && $jamProduktifTeori <= 0
+            && $jamProduktifPraktik <= 0
+        ) {
+            $legacyJamTeori = (float) ($input['jam_teori'] ?? 0);
+            $legacyJamPraktik = (float) ($input['jam_praktik'] ?? 0);
+            $legacyTotal = (float) ($input['total_jam_ajar'] ?? 0);
+            $legacyJenisAjar = $input['jenis_ajar'] ?? 'teori';
+
+            if ($legacyJamTeori > 0 || $legacyJamPraktik > 0) {
+                $jamNormatifTeori = $legacyJamTeori;
+                $jamProduktifPraktik = $legacyJamPraktik;
+            } elseif ($legacyJenisAjar === 'praktik') {
+                $jamProduktifPraktik = $legacyTotal;
+            } else {
+                $jamNormatifTeori = $legacyTotal;
+            }
+        }
+
+        $jamTeori = $jamNormatifTeori + $jamProduktifTeori;
+        $jamPraktik = $jamProduktifPraktik;
         $totalJamAjar = $jamTeori + $jamPraktik;
 
         if ($jamTeori > 0 && $jamPraktik > 0) {
@@ -624,6 +703,9 @@ class PresenceController extends Controller
         return [
             'jam_teori' => $jamTeori > 0 ? $jamTeori : null,
             'jam_praktik' => $jamPraktik > 0 ? $jamPraktik : null,
+            'jam_normatif_teori' => $jamNormatifTeori > 0 ? $jamNormatifTeori : null,
+            'jam_produktif_teori' => $jamProduktifTeori > 0 ? $jamProduktifTeori : null,
+            'jam_produktif_praktik' => $jamProduktifPraktik > 0 ? $jamProduktifPraktik : null,
             'total_jam_ajar' => (int) round($totalJamAjar),
             'jenis_ajar' => $jenisAjar,
         ];
@@ -725,6 +807,9 @@ class PresenceController extends Controller
             'jenis_ajar' => $presence?->jenis_ajar,
             'jam_teori' => $presence?->jam_teori,
             'jam_praktik' => $presence?->jam_praktik,
+            'jam_normatif_teori' => $presence?->jam_normatif_teori,
+            'jam_produktif_teori' => $presence?->jam_produktif_teori,
+            'jam_produktif_praktik' => $presence?->jam_produktif_praktik,
             'ada_piket' => (bool) ($presence?->ada_piket ?? false),
             'durasi_hadir_menit' => $presence?->durasi_hadir_menit,
             'selisih_jam_ajar_menit' => $presence?->selisih_jam_ajar_menit,
@@ -737,6 +822,7 @@ class PresenceController extends Controller
         return [
             'name' => $user->name,
             'role' => $user->role,
+            'sub_role' => $user->guru?->sub_role ?? $user->pegawai?->sub_role ?? null,
             'face_registered' => (bool) $user->face_hash,
             'face_registered_at' => $user->face_registered_at?->format('d F Y H:i'),
         ];
@@ -823,6 +909,9 @@ class PresenceController extends Controller
             'jenis_ajar' => $presence->jenis_ajar,
             'jam_teori' => $presence->jam_teori,
             'jam_praktik' => $presence->jam_praktik,
+            'jam_normatif_teori' => $presence->jam_normatif_teori,
+            'jam_produktif_teori' => $presence->jam_produktif_teori,
+            'jam_produktif_praktik' => $presence->jam_produktif_praktik,
             'ada_piket' => (bool) $presence->ada_piket,
             'durasi_hadir_menit' => $presence->durasi_hadir_menit,
             'selisih_jam_ajar_menit' => $presence->selisih_jam_ajar_menit,

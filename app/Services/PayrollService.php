@@ -202,6 +202,24 @@ class PayrollService
                 return (float) ($rate * $totalJamPraktik);
             }
 
+            if ($formulaType === 'jam_mengajar_normatif_teori') {
+                $totalJamNormatifTeori = $this->getTotalTeachingHoursByColumn($user, $year, $month, 'jam_normatif_teori');
+
+                return (float) ($rate * $totalJamNormatifTeori);
+            }
+
+            if ($formulaType === 'jam_mengajar_produktif_teori') {
+                $totalJamProduktifTeori = $this->getTotalTeachingHoursByColumn($user, $year, $month, 'jam_produktif_teori');
+
+                return (float) ($rate * $totalJamProduktifTeori);
+            }
+
+            if ($formulaType === 'jam_mengajar_produktif_praktik') {
+                $totalJamProduktifPraktik = $this->getTotalTeachingHoursByColumn($user, $year, $month, 'jam_produktif_praktik');
+
+                return (float) ($rate * $totalJamProduktifPraktik);
+            }
+
             if ($formulaType === 'piket') {
                 $jumlahPiket = Attendance::where('user_id', $user->id)
                     ->whereYear('tanggal', $year)
@@ -265,6 +283,24 @@ class PayrollService
             return " ({$totalJamPraktik} jam praktik x Rp" . number_format($rate, 0, ',', '.') . ")";
         }
 
+        if ($formulaType === 'jam_mengajar_normatif_teori') {
+            $totalJamNormatifTeori = $this->getTotalTeachingHoursByColumn($user, $year, $month, 'jam_normatif_teori');
+
+            return " ({$totalJamNormatifTeori} jam teori normatif x Rp" . number_format($rate, 0, ',', '.') . ")";
+        }
+
+        if ($formulaType === 'jam_mengajar_produktif_teori') {
+            $totalJamProduktifTeori = $this->getTotalTeachingHoursByColumn($user, $year, $month, 'jam_produktif_teori');
+
+            return " ({$totalJamProduktifTeori} jam teori produktif x Rp" . number_format($rate, 0, ',', '.') . ")";
+        }
+
+        if ($formulaType === 'jam_mengajar_produktif_praktik') {
+            $totalJamProduktifPraktik = $this->getTotalTeachingHoursByColumn($user, $year, $month, 'jam_produktif_praktik');
+
+            return " ({$totalJamProduktifPraktik} jam praktik produktif x Rp" . number_format($rate, 0, ',', '.') . ")";
+        }
+
         if ($formulaType === 'piket') {
             $jumlahPiket = Attendance::where('user_id', $user->id)
                 ->whereYear('tanggal', $year)
@@ -298,6 +334,14 @@ class PayrollService
             ->whereYear('tanggal', $year)
             ->whereMonth('tanggal', $month)
             ->sum('jam_praktik');
+    }
+
+    private function getTotalTeachingHoursByColumn(User $user, string $year, string $month, string $column): float
+    {
+        return (float) Attendance::where('user_id', $user->id)
+            ->whereYear('tanggal', $year)
+            ->whereMonth('tanggal', $month)
+            ->sum($column);
     }
 
     private function getOvertimeCount(User $user, string $year, string $month): int

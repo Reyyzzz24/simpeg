@@ -37,7 +37,7 @@ class SalaryRuleController extends Controller
             'components' => 'required|array',
             'components.*.id' => 'required|exists:salary_components,id',
             'components.*.amount_type' => 'required|in:fixed,percentage,formula',
-            'components.*.formula_type' => 'nullable|in:hadir,jam_kerja,lembur,jam_mengajar_teori,jam_mengajar_praktik,piket',
+            'components.*.formula_type' => 'nullable|in:hadir,jam_kerja,lembur,jam_mengajar_teori,jam_mengajar_praktik,jam_mengajar_normatif_teori,jam_mengajar_produktif_teori,jam_mengajar_produktif_praktik,piket',
             'components.*.formula_interval_minutes' => 'nullable|integer|min:1|max:1440',
             'components.*.amount' => 'required|numeric',
         ]);
@@ -75,7 +75,7 @@ class SalaryRuleController extends Controller
             'components' => 'required|array',
             'components.*.id' => 'required|exists:salary_components,id',
             'components.*.amount_type' => 'required|in:fixed,percentage,formula',
-            'components.*.formula_type' => 'nullable|in:hadir,jam_kerja,lembur,jam_mengajar_teori,jam_mengajar_praktik,piket',
+            'components.*.formula_type' => 'nullable|in:hadir,jam_kerja,lembur,jam_mengajar_teori,jam_mengajar_praktik,jam_mengajar_normatif_teori,jam_mengajar_produktif_teori,jam_mengajar_produktif_praktik,piket',
             'components.*.formula_interval_minutes' => 'nullable|integer|min:1|max:1440',
             'components.*.amount' => 'required|numeric',
         ]);
