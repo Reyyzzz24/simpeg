@@ -17,6 +17,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: 65002
+          timeout: 120s       
+          command_timeout: 20m 
           script: |
             cd ~/domains/simpeg.smkkpdm.sch.id/public_html
 
