@@ -1,7 +1,19 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import { MoreHorizontal, UserRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-export const getOvertimeReportColumns = (): ColumnDef<any>[] => [
+export const getOvertimeReportColumns = (opts?: {
+    onUserReport?: (record: any) => void;
+}): ColumnDef<any>[] => [
     {
         accessorKey: 'pegawai_nama',
         header: 'Nama Pegawai',
@@ -48,4 +60,34 @@ export const getOvertimeReportColumns = (): ColumnDef<any>[] => [
                 <Badge variant="secondary">Menunggu</Badge>
             ),
     },
+    ...(opts?.onUserReport
+        ? [
+              {
+                  id: 'actions',
+                  header: 'Aksi',
+                  cell: ({ row }: any) => (
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Buka menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52">
+                              <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                  onClick={() =>
+                                      opts.onUserReport?.(row.original)
+                                  }
+                              >
+                                  <UserRound className="mr-2 h-4 w-4" />
+                                  Laporan Per User
+                              </DropdownMenuItem>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                  ),
+              },
+          ]
+        : []),
 ];

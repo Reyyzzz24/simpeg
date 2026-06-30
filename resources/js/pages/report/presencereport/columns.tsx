@@ -1,8 +1,21 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import { MoreHorizontal, UserRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { formatReportLabel } from '../lib/format-label';
 
-export const getReportColumns = (type: string = 'all'): ColumnDef<any>[] => {
+export const getReportColumns = (
+    type: string = 'all',
+    opts?: { onUserReport?: (record: any) => void },
+): ColumnDef<any>[] => {
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: 'nama',
@@ -138,6 +151,33 @@ export const getReportColumns = (type: string = 'all'): ColumnDef<any>[] => {
                 },
             },
         );
+    }
+
+    if (opts?.onUserReport) {
+        columns.push({
+            id: 'actions',
+            header: 'Aksi',
+            cell: ({ row }) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Buka menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={() => opts.onUserReport?.(row.original)}
+                        >
+                            <UserRound className="mr-2 h-4 w-4" />
+                            Laporan Per User
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ),
+        });
     }
 
     return columns;

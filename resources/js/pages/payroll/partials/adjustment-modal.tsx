@@ -47,6 +47,7 @@ type FormulaType =
     | 'jam_mengajar_produktif_teori'
     | 'jam_mengajar_produktif_praktik'
     | 'jam_mengajar_eskul'
+    | 'kehadiran_eskul'
     | 'piket';
 
 type AdjustmentItem = {
@@ -207,6 +208,10 @@ export default function AdjustmentModal({
                 return 'Nominal/Jam Eskul';
             }
 
+            if (item.formula_type === 'kehadiran_eskul') {
+                return 'Nominal/Kehadiran Eskul';
+            }
+
             if (item.formula_type === 'piket') {
                 return 'Nominal per Piket';
             }
@@ -253,6 +258,10 @@ export default function AdjustmentModal({
 
             if (item.formula_type === 'jam_mengajar_eskul') {
                 return 'Nominal per Jam Eskul';
+            }
+
+            if (item.formula_type === 'kehadiran_eskul') {
+                return 'Nominal per Kehadiran Eskul';
             }
 
             if (item.formula_type === 'piket') {
@@ -528,6 +537,9 @@ export default function AdjustmentModal({
                                                     <SelectItem value="jam_mengajar_eskul">
                                                         Jam Eskul
                                                     </SelectItem>
+                                                    <SelectItem value="kehadiran_eskul">
+                                                        Kehadiran Eskul
+                                                    </SelectItem>
                                                     <SelectItem value="piket">
                                                         Piket
                                                     </SelectItem>
@@ -581,9 +593,12 @@ export default function AdjustmentModal({
                                                                 'jam_mengajar_eskul'
                                                               ? '* Otomatis: nominal dikali total jam eskul per bulan.'
                                                               : item.formula_type ===
-                                                                  'piket'
-                                                                ? '* Otomatis: nominal dikali frekuensi piket (jumlah hari ada_piket = true) di periode ini.'
-                                                                : "* Otomatis: nominal dikali total status 'hadir' di absensi."}
+                                                                  'kehadiran_eskul'
+                                                                ? '* Otomatis: nominal dikali frekuensi kehadiran eskul (jam_eskul > 0) per bulan.'
+                                                                : item.formula_type ===
+                                                                    'piket'
+                                                                  ? '* Otomatis: nominal dikali frekuensi piket (jumlah hari ada_piket = true) di periode ini.'
+                                                                  : "* Otomatis: nominal dikali total status 'hadir' di absensi."}
                                         </p>
                                     </div>
                                 )}

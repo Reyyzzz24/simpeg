@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { CheckCircle2, Clock, Filter, Timer, Download } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import UserReportModal from '../partials/user-report-modal';
 import { getOvertimeReportColumns } from './columns';
 
 const breadcrumbs = [
@@ -32,6 +33,36 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
     const [end, setEnd] = useState(filters?.end_date ?? '');
     const [status, setStatus] = useState(filters?.status ?? 'all');
     const [filterOpen, setFilterOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<any | null>(null);
+
+    const selectedUserRows = useMemo(() => {
+        if (!selectedUser) {
+            return [];
+        }
+
+        return (data ?? []).filter(
+            (item: any) =>
+                String(item.user_id) === String(selectedUser.user_id),
+        );
+    }, [data, selectedUser]);
+
+    const selectedUserStats = useMemo(() => {
+        const approved = selectedUserRows.filter(
+            (item: any) => item.is_approved,
+        ).length;
+        const pending = selectedUserRows.length - approved;
+        const totalHours = selectedUserRows.reduce(
+            (sum: number, item: any) => sum + Number(item.durasi_jam ?? 0),
+            0,
+        );
+
+        return {
+            total: selectedUserRows.length,
+            approved,
+            pending,
+            totalHours,
+        };
+    }, [selectedUserRows]);
 
     const handleFilter = () => {
         router.get('/report/overtime', {
@@ -128,7 +159,9 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
 
                     <DataTable
                         data={data ?? []}
-                        columns={getOvertimeReportColumns()}
+                        columns={getOvertimeReportColumns({
+                            onUserReport: setSelectedUser,
+                        })}
                         searchKey="pegawai_nama"
                         searchPlaceholder="Cari nama pegawai..."
                         actions={
@@ -224,7 +257,10 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
                                             status,
                                         });
 
-                                        window.open(`/report/overtime/print?${params.toString()}`, '_blank');
+                                        window.open(
+                                            `/report/overtime/print?${params.toString()}`,
+                                            '_blank',
+                                        );
                                     }}
                                 >
                                     <Download className="mr-2 size-4" />
@@ -235,6 +271,53 @@ export default function OvertimeReportIndex({ data, stats, filters }: any) {
                     />
                 </div>
 
+                <UserReportModal
+                    isOpen={!!selectedUser}
+                    onClose={() => setSelectedUser(null)}
+                    title="Laporan Lembur Per User"
+                    description="Data lembur per user sesuai filter laporan yang sedang aktif."
+                    userName={selectedUser?.pegawai_nama ?? '-'}
+                    periodLabel={
+                        start || end
+                            ? `${start || 'Awal'} - ${end || 'Akhir'}`
+                            : 'Semua Periode'
+                    }
+                    data={selectedUserRows}
+                    columns={getOvertimeReportColumns()}
+                    stats={[
+                        {
+                            title: 'Total',
+                            value: selectedUserStats.total,
+                            color: 'bg-slate-50 border-slate-200',
+                        },
+                        {
+                            title: 'Disetujui',
+                            value: selectedUserStats.approved,
+                            color: 'bg-green-50 border-green-200',
+                        },
+                        {
+                            title: 'Menunggu',
+                            value: selectedUserStats.pending,
+                            color: 'bg-yellow-50 border-yellow-200',
+                        },
+                        {
+                            title: 'Total Jam',
+                            value: selectedUserStats.totalHours.toFixed(2),
+                            color: 'bg-purple-50 border-purple-200',
+                        },
+                    ]}
+                    searchKey="tanggal"
+                    searchPlaceholder="Cari tanggal..."
+                    emptyText="Tidak ditemukan data lembur untuk user ini."
+                    printUrl={`/report/overtime/print?${new URLSearchParams({
+                        start_date: start,
+                        end_date: end,
+                        status,
+                        user_id: selectedUser?.user_id
+                            ? String(selectedUser.user_id)
+                            : '',
+                    }).toString()}`}
+                />
             </div>
         </>
     );

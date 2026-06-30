@@ -36,6 +36,7 @@ class SalaryReportController extends Controller
 
                 return [
                     'id' => $payroll->id,
+                    'user_id' => $payroll->user_id,
                     'nama' => $payroll->user->name ?? '-',
                     'role' => $payroll->user->role ?? '-',
                     'jabatan' => $payroll->jabatan_snapshot

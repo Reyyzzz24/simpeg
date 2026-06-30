@@ -17,7 +17,7 @@ class ReportExportController extends Controller
         $start = $request->input('start_date');
         $end = $request->input('end_date');
         $status = $request->input('status', 'all');
-
+        $userId = $request->input('user_id');
         $query = Overtime::with([
             'user:id,name,role',
             'employee:id,user_id,nama,nip',
@@ -34,6 +34,10 @@ class ReportExportController extends Controller
 
         if ($status === 'pending') {
             $query->where('is_approved', false);
+        }
+
+        if ($userId) {
+            $query->where('pegawai_id', $userId);
         }
 
         $data = $query->latest('tanggal')->latest('id')->get();
@@ -96,6 +100,7 @@ class ReportExportController extends Controller
         $start = $request->input('start_date');
         $end = $request->input('end_date');
         $status = $request->input('status', 'all');
+        $userId = $request->input('user_id');
 
         $query = Overtime::with([
             'user:id,name,role',
@@ -115,6 +120,10 @@ class ReportExportController extends Controller
             $query->where('is_approved', false);
         }
 
+        if ($userId) {
+            $query->where('pegawai_id', $userId);
+        }
+
         $data = $query->latest('tanggal')->latest('id')->get()->map(function (Overtime $item) {
             $jamMulai = Carbon::parse($item->jam_mulai);
             $jamSelesai = Carbon::parse($item->jam_selesai);
@@ -125,6 +134,7 @@ class ReportExportController extends Controller
 
             return [
                 'id' => $item->id,
+                'user_id' => $item->pegawai_id,
                 'pegawai_nama' => ($item->user?->role === 'guru' ? $item->teacher?->nama : $item->employee?->nama)
                     ?? $item->user?->name
                     ?? '-',
@@ -145,6 +155,7 @@ class ReportExportController extends Controller
     {
         $periode = $request->input('periode');
         $role = $request->input('role', 'all');
+        $userId = $request->input('user_id');
 
         $query = Payroll::with(['user', 'details.component', 'adjustments.component']);
         if ($periode) {
@@ -155,6 +166,10 @@ class ReportExportController extends Controller
             $query->whereHas('user', function ($query) use ($role) {
                 $query->where('role', $role);
             });
+        }
+
+        if ($userId) {
+            $query->where('user_id', $userId);
         }
 
         $payrolls = $query->latest('periode')->latest('id')->get();
@@ -211,6 +226,7 @@ class ReportExportController extends Controller
     {
         $periode = $request->input('periode');
         $role = $request->input('role', 'all');
+        $userId = $request->input('user_id');
 
         $query = Payroll::with(['user', 'details.component', 'adjustments.component']);
         if ($periode) {
@@ -221,6 +237,10 @@ class ReportExportController extends Controller
             $query->whereHas('user', function ($query) use ($role) {
                 $query->where('role', $role);
             });
+        }
+
+        if ($userId) {
+            $query->where('user_id', $userId);
         }
 
         $payrolls = $query->latest('periode')->latest('id')->get()->map(function ($p) {
@@ -234,6 +254,7 @@ class ReportExportController extends Controller
 
             return [
                 'id' => $p->id,
+                'user_id' => $p->user_id,
                 'nama' => $p->user->name ?? '-',
                 'role' => $this->formatReportLabel($p->user->role ?? '-'),
                 'jabatan' => $p->jabatan_snapshot
@@ -252,6 +273,7 @@ class ReportExportController extends Controller
         $type = $request->input('type', 'all');
         $start = $request->input('start_date');
         $end = $request->input('end_date');
+        $userId = $request->input('user_id');
 
         $query = Attendance::with('user');
 
@@ -328,6 +350,7 @@ class ReportExportController extends Controller
         $type = $request->input('type', 'all');
         $start = $request->input('start_date');
         $end = $request->input('end_date');
+        $userId = $request->input('user_id');
 
         $query = Attendance::with('user');
 
@@ -339,6 +362,10 @@ class ReportExportController extends Controller
             $query->whereHas('user', function ($q) use ($type) {
                 $q->where('role', $type);
             });
+        }
+
+        if ($userId) {
+            $query->where('user_id', $userId);
         }
 
         $data = $query->latest('tanggal')->get()->map(function ($item) {
@@ -357,6 +384,7 @@ class ReportExportController extends Controller
 
             $row = [
                 'id' => $item->id,
+                'user_id' => $item->user_id,
                 'nama' => $item->user->name ?? '-',
                 'role' => $this->formatReportLabel($item->user->role ?? '-'),
                 'tanggal' => $item->tanggal,

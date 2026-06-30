@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { DollarSign, Download, FileText, Filter, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import UserReportModal from '../partials/user-report-modal';
 import { getSalaryReportColumns } from './columns';
 
 const breadcrumbs = [
@@ -31,6 +32,7 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
     const [periode, setPeriode] = useState(filters?.periode ?? '');
     const [role, setRole] = useState(filters?.role ?? 'all');
     const [filterOpen, setFilterOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
     const handleFilter = () => {
         router.get('/report/salary', { periode, role });
@@ -42,6 +44,29 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
             periode,
             role,
         });
+
+    const selectedUserRows = useMemo(() => {
+        if (!selectedUser) {
+            return [];
+        }
+
+        return (data ?? []).filter(
+            (item: any) =>
+                String(item.user_id) === String(selectedUser.user_id),
+        );
+    }, [data, selectedUser]);
+
+    const selectedUserStats = useMemo(() => {
+        return selectedUserRows.reduce(
+            (acc: any, item: any) => ({
+                totalPayroll: acc.totalPayroll + 1,
+                totalGaji: acc.totalGaji + Number(item.total_gaji ?? 0),
+                totalAdjustment:
+                    acc.totalAdjustment + Number(item.total_adjustment ?? 0),
+            }),
+            { totalPayroll: 0, totalGaji: 0, totalAdjustment: 0 },
+        );
+    }, [selectedUserRows]);
 
     return (
         <>
@@ -119,7 +144,9 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
 
                     <DataTable
                         data={data ?? []}
-                        columns={getSalaryReportColumns()}
+                        columns={getSalaryReportColumns({
+                            onUserReport: setSelectedUser,
+                        })}
                         searchKey="nama"
                         searchPlaceholder="Cari nama..."
                         actions={
@@ -143,7 +170,9 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                                                 type="month"
                                                 value={periode}
                                                 onChange={(event) =>
-                                                    setPeriode(event.target.value)
+                                                    setPeriode(
+                                                        event.target.value,
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -193,7 +222,10 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                                     variant="outline"
                                     onClick={() => {
                                         const params = getReportParams();
-                                        window.open(`/report/salary/print?${params.toString()}`, '_blank');
+                                        window.open(
+                                            `/report/salary/print?${params.toString()}`,
+                                            '_blank',
+                                        );
                                     }}
                                 >
                                     <Download className="mr-2 size-4" />
@@ -204,6 +236,43 @@ export default function SalaryReportIndex({ data, stats, filters }: any) {
                     />
                 </div>
 
+                <UserReportModal
+                    isOpen={!!selectedUser}
+                    onClose={() => setSelectedUser(null)}
+                    title="Laporan Penggajian Per User"
+                    description="Data penggajian per user sesuai filter laporan yang sedang aktif."
+                    userName={selectedUser?.nama ?? '-'}
+                    periodLabel={periode || 'Semua Periode'}
+                    data={selectedUserRows}
+                    columns={getSalaryReportColumns()}
+                    stats={[
+                        {
+                            title: 'Payroll',
+                            value: selectedUserStats.totalPayroll,
+                            color: 'bg-slate-50 border-slate-200',
+                        },
+                        {
+                            title: 'Total Gaji',
+                            value: `Rp ${Number(selectedUserStats.totalGaji ?? 0).toLocaleString('id-ID')}`,
+                            color: 'bg-green-50 border-green-200',
+                        },
+                        {
+                            title: 'Adjustment',
+                            value: `Rp ${Number(selectedUserStats.totalAdjustment ?? 0).toLocaleString('id-ID')}`,
+                            color: 'bg-purple-50 border-purple-200',
+                        },
+                    ]}
+                    searchKey="periode"
+                    searchPlaceholder="Cari periode..."
+                    emptyText="Tidak ditemukan data penggajian untuk user ini."
+                    printUrl={`/report/salary/print?${new URLSearchParams({
+                        periode,
+                        role,
+                        user_id: selectedUser?.user_id
+                            ? String(selectedUser.user_id)
+                            : '',
+                    }).toString()}`}
+                />
             </div>
         </>
     );

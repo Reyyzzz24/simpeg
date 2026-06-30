@@ -46,6 +46,7 @@ class PresentReportController extends Controller
 
                 $row = [
                     'id' => $item->id,
+                    'user_id' => $item->user_id,
                     'nama' => $item->user->name ?? '-',
                     'role' => $item->user->role ?? '-',
                     'tanggal' => $item->tanggal,

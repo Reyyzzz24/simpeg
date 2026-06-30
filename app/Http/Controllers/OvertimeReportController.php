@@ -49,6 +49,7 @@ class OvertimeReportController extends Controller
 
                 return [
                     'id' => $item->id,
+                    'user_id' => $item->pegawai_id,
                     'pegawai_nama' => ($item->user?->role === 'guru' ? $item->teacher?->nama : $item->employee?->nama)
                         ?? $item->user?->name
                         ?? '-',

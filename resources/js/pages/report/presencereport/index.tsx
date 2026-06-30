@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { Clock, Download, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import AppLayout from '@/layouts/app-layout';
 import ReportFilter from '../partials/report-filter';
+import UserReportModal from '../partials/user-report-modal';
 import { getReportColumns } from './columns';
 
 const breadcrumbs = [
@@ -26,6 +27,55 @@ export default function PresenceReportIndex({ data, filters }: any) {
     const [type, setType] = useState(filters?.type ?? 'all');
     const [start, setStart] = useState(filters?.start_date ?? '');
     const [end, setEnd] = useState(filters?.end_date ?? '');
+    const [selectedUser, setSelectedUser] = useState<any | null>(null);
+
+    const selectedUserRows = useMemo(() => {
+        if (!selectedUser) {
+            return [];
+        }
+
+        return (data ?? []).filter(
+            (item: any) =>
+                String(item.user_id) === String(selectedUser.user_id),
+        );
+    }, [data, selectedUser]);
+
+    const selectedUserStats = useMemo(() => {
+        const counts = {
+            total: selectedUserRows.length,
+            hadir: 0,
+            izin: 0,
+            sakit: 0,
+            alpha: 0,
+            terlambat: 0,
+        };
+
+        selectedUserRows.forEach((item: any) => {
+            const status = String(item.status_disiplin ?? '').toLowerCase();
+
+            if (status === 'hadir') {
+                counts.hadir++;
+            }
+
+            if (status === 'izin') {
+                counts.izin++;
+            }
+
+            if (status === 'sakit') {
+                counts.sakit++;
+            }
+
+            if (status === 'alpha') {
+                counts.alpha++;
+            }
+
+            if (status === 'terlambat') {
+                counts.terlambat++;
+            }
+        });
+
+        return counts;
+    }, [selectedUserRows]);
 
     const handleFilter = (filters?: any) => {
         const t = filters?.type ?? type;
@@ -98,7 +148,9 @@ export default function PresenceReportIndex({ data, filters }: any) {
 
                     <DataTable
                         data={data ?? []}
-                        columns={getReportColumns(type)}
+                        columns={getReportColumns(type, {
+                            onUserReport: setSelectedUser,
+                        })}
                         searchKey="nama"
                         searchPlaceholder="Cari nama..."
                         actions={
@@ -144,6 +196,64 @@ export default function PresenceReportIndex({ data, filters }: any) {
                         }
                     />
                 </div>
+
+                <UserReportModal
+                    isOpen={!!selectedUser}
+                    onClose={() => setSelectedUser(null)}
+                    title="Laporan Kehadiran Per User"
+                    description="Data kehadiran per user sesuai filter laporan yang sedang aktif."
+                    userName={selectedUser?.nama ?? '-'}
+                    periodLabel={
+                        start || end
+                            ? `${start || 'Awal'} - ${end || 'Akhir'}`
+                            : 'Semua Periode'
+                    }
+                    data={selectedUserRows}
+                    columns={getReportColumns(type)}
+                    stats={[
+                        {
+                            title: 'Total',
+                            value: selectedUserStats.total,
+                            color: 'bg-slate-50 border-slate-200',
+                        },
+                        {
+                            title: 'Hadir',
+                            value: selectedUserStats.hadir,
+                            color: 'bg-green-50 border-green-200',
+                        },
+                        {
+                            title: 'Terlambat',
+                            value: selectedUserStats.terlambat,
+                            color: 'bg-yellow-50 border-yellow-200',
+                        },
+                        {
+                            title: 'Izin',
+                            value: selectedUserStats.izin,
+                            color: 'bg-blue-50 border-blue-200',
+                        },
+                        {
+                            title: 'Sakit',
+                            value: selectedUserStats.sakit,
+                            color: 'bg-purple-50 border-purple-200',
+                        },
+                        {
+                            title: 'Alpha',
+                            value: selectedUserStats.alpha,
+                            color: 'bg-red-50 border-red-200',
+                        },
+                    ]}
+                    searchKey="tanggal"
+                    searchPlaceholder="Cari tanggal..."
+                    emptyText="Tidak ditemukan data kehadiran untuk user ini."
+                    printUrl={`/report/presence/print?${new URLSearchParams({
+                        type,
+                        start_date: start,
+                        end_date: end,
+                        user_id: selectedUser?.user_id
+                            ? String(selectedUser.user_id)
+                            : '',
+                    }).toString()}`}
+                />
             </div>
         </>
     );

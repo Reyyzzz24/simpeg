@@ -1,7 +1,19 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import { MoreHorizontal, UserRound } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { formatReportLabel } from '../lib/format-label';
 
-export const getSalaryReportColumns = (): ColumnDef<any>[] => [
+export const getSalaryReportColumns = (opts?: {
+    onUserReport?: (record: any) => void;
+}): ColumnDef<any>[] => [
     {
         accessorKey: 'nama',
         header: 'Nama',
@@ -46,6 +58,7 @@ export const getSalaryReportColumns = (): ColumnDef<any>[] => [
         header: () => <div className="text-center">Nominal</div>,
         cell: ({ row }) => {
             const details = row.original.details ?? [];
+
             return (
                 <div className="flex w-full flex-col items-center">
                     {details.map((d: any, i: number) => (
@@ -69,4 +82,34 @@ export const getSalaryReportColumns = (): ColumnDef<any>[] => [
         cell: ({ row }) =>
             `Rp ${Number(row.original.total_gaji ?? 0).toLocaleString('id-ID')}`,
     },
+    ...(opts?.onUserReport
+        ? [
+              {
+                  id: 'actions',
+                  header: 'Aksi',
+                  cell: ({ row }: any) => (
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Buka menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52">
+                              <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                  onClick={() =>
+                                      opts.onUserReport?.(row.original)
+                                  }
+                              >
+                                  <UserRound className="mr-2 h-4 w-4" />
+                                  Laporan Per User
+                              </DropdownMenuItem>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                  ),
+              },
+          ]
+        : []),
 ];

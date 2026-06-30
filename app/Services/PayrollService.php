@@ -226,6 +226,12 @@ class PayrollService
                 return (float) ($rate * $totalJamEskul);
             }
 
+            if ($formulaType === 'kehadiran_eskul') {
+                $frekuensiEskul = $this->getEskulAttendanceFrequency($user, $year, $month);
+
+                return (float) ($rate * $frekuensiEskul);
+            }
+
             if ($formulaType === 'piket') {
                 $jumlahPiket = Attendance::where('user_id', $user->id)
                     ->whereYear('tanggal', $year)
@@ -313,6 +319,12 @@ class PayrollService
             return " ({$totalJamEskul} jam eskul x Rp" . number_format($rate, 0, ',', '.') . ")";
         }
 
+        if ($formulaType === 'kehadiran_eskul') {
+            $frekuensiEskul = $this->getEskulAttendanceFrequency($user, $year, $month);
+
+            return " ({$frekuensiEskul} x hadir eskul)";
+        }
+
         if ($formulaType === 'piket') {
             $jumlahPiket = Attendance::where('user_id', $user->id)
                 ->whereYear('tanggal', $year)
@@ -354,6 +366,15 @@ class PayrollService
             ->whereYear('tanggal', $year)
             ->whereMonth('tanggal', $month)
             ->sum($column);
+    }
+
+    private function getEskulAttendanceFrequency(User $user, string $year, string $month): int
+    {
+        return Attendance::where('user_id', $user->id)
+            ->whereYear('tanggal', $year)
+            ->whereMonth('tanggal', $month)
+            ->where('jam_eskul', '>', 0)
+            ->count();
     }
 
     private function getOvertimeCount(User $user, string $year, string $month): int
